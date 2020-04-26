@@ -1,0 +1,31 @@
+*.class
+*.log
+logs
+
+#VIM specific
+tags
+.*.swp
+.*.swo
+
+#MAC OS specific
+.DS_Store
+
+# sbt specific
+.cache/
+.history/
+.lib/
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+.idea
+.idea/*
+
+services/data/cromwell-client-logs/*
+services/data/cromwell-executions/*
+services/data/cromwell-workflow-logs/*
+dna-seq-pipeline/inputs/OC_plus.json
+
+.idea
