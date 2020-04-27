@@ -1,0 +1,4 @@
+[core]
+    remote = species
+['remote "species"']
+    url = gdrive://0APuU2w04mc7qUk9PVA/repositories/species
