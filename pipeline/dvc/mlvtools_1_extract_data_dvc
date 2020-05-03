@@ -30,8 +30,9 @@ MLV_PY_CMD_NAME="mlvtools_1_extract_data.py"
 MLV_DVC_META_FILENAME="./mlvtools_1_extract_data.dvc"
 
 dvc run${NO_CACHE_OPT} --overwrite-dvcfile -f $MLV_DVC_META_FILENAME \
--o data/output/run.tsv \
-pipeline/scripts/mlvtools_1_extract_data.py 
+-o data/output/run.tsv
+run = "sra:SRR1521445" \
+pipeline/scripts/mlvtools_1_extract_data.py run
 
 
 popd

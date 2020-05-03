@@ -3,17 +3,13 @@
 import argparse
 
 
-def mlvtools_1_extract_data():
+def mlvtools_1_extract_data(run):
     """
+    :param str run: accession
+    :dvc-extra: run
     :dvc-out: data/output/run.tsv
-    """
-
-    #hello world mlvtools
-    """
-    :dvc-out: data/output/run.tsv
-    """
-
     run = "sra:SRR1521445"
+    """
 
     from pathlib import Path
     base_dir = Path("./")
@@ -37,6 +33,8 @@ def mlvtools_1_extract_data():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Command for script mlvtools_1_extract_data')
 
+    parser.add_argument('--run', type=str, required=True, help="accession")
+
     args = parser.parse_args()
 
-    mlvtools_1_extract_data()
+    mlvtools_1_extract_data(args.run)

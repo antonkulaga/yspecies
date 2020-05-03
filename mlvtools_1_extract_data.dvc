@@ -1,8 +1,0 @@
-md5: f4559dc62b4a266d7acd52612b9840b2
-cmd: pipeline/scripts/mlvtools_1_extract_data.py
-outs:
-- md5: 19756bbadb189d1a2c38e30c759d66db
-  path: data/output/run.tsv
-  cache: true
-  metric: false
-  persist: false

@@ -1,0 +1,7 @@
+md5: 480a3795b2fc978a94e1c418184a5746
+outs:
+- md5: d751713988987e9331980363e24189ce.dir
+  path: samples
+  cache: true
+  metric: false
+  persist: false

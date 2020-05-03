@@ -1,0 +1,56 @@
+species	common_name	animal_class	lifespan	ensembl_url	taxon
+:Strigops_habroptila	Kakapo	ens:Aves	60.0	<https://www.ensembl.org/Strigops_habroptila>	ens:taxon#2489341
+:Gallus_gallus	Red junglefowl	ens:Aves	30.0	<https://www.ensembl.org/Gallus_gallus>	ens:taxon#9031
+:Parus_major	Great tit	ens:Aves	15.4	<https://www.ensembl.org/Parus_major>	ens:taxon#9157
+:Zonotrichia_albicollis	White-throated sparrow	ens:Aves	14.9	<https://www.ensembl.org/Zonotrichia_albicollis>	ens:taxon#44394
+:Cyanistes_caeruleus	Blue tit	ens:Aves	14.6	<https://www.ensembl.org/Cyanistes_caeruleus>	ens:taxon#156563
+:Meleagris_gallopavo	Wild turkey	ens:Aves	13.0	<https://www.ensembl.org/Meleagris_gallopavo>	ens:taxon#9103
+:Taeniopygia_guttata	Zebra finch	ens:Aves	12.0	<https://www.ensembl.org/Taeniopygia_guttata>	ens:taxon#59729
+:Coturnix_japonica	Japanese quail	ens:Aves	6.0	<https://www.ensembl.org/Coturnix_japonica>	ens:taxon#93934
+:Callorhinchus_milii	Elephant fish	ens:Chondrichthyes	6.0	<https://www.ensembl.org/Callorhinchus_milii>	ens:taxon#7868
+:Latimeria_chalumnae	Coelacanth	ens:Coelacanthi	48.0	<https://www.ensembl.org/Latimeria_chalumnae>	ens:taxon#7897
+:Homo_sapiens	Human	ens:Mammalia	122.5	<https://www.ensembl.org/Homo_sapiens>	ens:taxon#9606
+:Pan_troglodytes	Chimpanzee	ens:Mammalia	59.4	<https://www.ensembl.org/Pan_troglodytes>	ens:taxon#9598
+:Equus_caballus	Horse	ens:Mammalia	57.0	<https://www.ensembl.org/Equus_caballus>	ens:taxon#9796
+:Pan_paniscus	Pygmy chimpanzee or bonobo	ens:Mammalia	55.0	<https://www.ensembl.org/Pan_paniscus>	ens:taxon#9597
+:Tursiops_truncatus	Bottlenosed dolphin	ens:Mammalia	51.6	<https://www.ensembl.org/Tursiops_truncatus>	ens:taxon#9739
+:Macaca_mulatta	Rhesus monkey	ens:Mammalia	40.0	<https://www.ensembl.org/Macaca_mulatta>	ens:taxon#9544
+:Macaca_fascicularis	Long-tailed macaque	ens:Mammalia	39.0	<https://www.ensembl.org/Macaca_fascicularis>	ens:taxon#9541
+:Macaca_nemestrina	Pigtail macaque	ens:Mammalia	37.6	<https://www.ensembl.org/Macaca_nemestrina>	ens:taxon#9545
+:Ailuropoda_melanoleuca	Giant panda	ens:Mammalia	36.8	<https://www.ensembl.org/Ailuropoda_melanoleuca>	ens:taxon#9646
+:Ursus_americanus	American black bear	ens:Mammalia	34.0	<https://www.ensembl.org/Ursus_americanus>	ens:taxon#9643
+:Heterocephalus_glaber	Naked mole-rat	ens:Mammalia	31.0	<https://www.ensembl.org/Heterocephalus_glaber>	ens:taxon#10181
+:Rhinolophus_ferrumequinum	Greater horseshoe bat	ens:Mammalia	30.5	<https://www.ensembl.org/Rhinolophus_ferrumequinum>	ens:taxon#59479
+:Felis_catus	Domestic cat	ens:Mammalia	30.0	<https://www.ensembl.org/Felis_catus>	ens:taxon#9685
+:Sus_scrofa	Wild boar	ens:Mammalia	27.0	<https://www.ensembl.org/Sus_scrofa>	ens:taxon#9823
+:Bos_grunniens	Yak	ens:Mammalia	26.3	<https://www.ensembl.org/Bos_grunniens>	ens:taxon#30521
+:Ovis_aries	Domestic sheep or mouflon	ens:Mammalia	22.8	<https://www.ensembl.org/Ovis_aries>	ens:taxon#9940
+:Callithrix_jacchus	White-tufted-ear marmoset	ens:Mammalia	22.8	<https://www.ensembl.org/Callithrix_jacchus>	ens:taxon#9483
+:Ornithorhynchus_anatinus	Duck-billed platypus	ens:Mammalia	22.6	<https://www.ensembl.org/Ornithorhynchus_anatinus>	ens:taxon#9258
+:Phascolarctos_cinereus	Koala	ens:Mammalia	22.1	<https://www.ensembl.org/Phascolarctos_cinereus>	ens:taxon#38626
+:Capra_hircus	Domestic goat	ens:Mammalia	20.8	<https://www.ensembl.org/Capra_hircus>	ens:taxon#9925
+:Suricata_suricatta	Meerkat	ens:Mammalia	20.6	<https://www.ensembl.org/Suricata_suricatta>	ens:taxon#37032
+:Bos_taurus	Domestic cattle	ens:Mammalia	20.0	<https://www.ensembl.org/Bos_taurus>	ens:taxon#9913
+:Otolemur_garnettii	Small-eared galago	ens:Mammalia	20.0	<https://www.ensembl.org/Otolemur_garnettii>	ens:taxon#30611
+:Microcebus_murinus	Gray mouse lemur	ens:Mammalia	18.2	<https://www.ensembl.org/Microcebus_murinus>	ens:taxon#30608
+:Sarcophilus_harrisii	Tasmanian devil	ens:Mammalia	13.0	<https://www.ensembl.org/Sarcophilus_harrisii>	ens:taxon#9305
+:Cavia_porcellus	Guinea pig	ens:Mammalia	12.0	<https://www.ensembl.org/Cavia_porcellus>	ens:taxon#10141
+:Erinaceus_europaeus	Western European hedgehog	ens:Mammalia	11.7	<https://www.ensembl.org/Erinaceus_europaeus>	ens:taxon#9365
+:Tupaia_belangeri	Northern tree shrew	ens:Mammalia	11.1	<https://www.ensembl.org/Tupaia_belangeri>	ens:taxon#37347
+:Oryctolagus_cuniculus	European rabbit	ens:Mammalia	9.0	<https://www.ensembl.org/Oryctolagus_cuniculus>	ens:taxon#9986
+:Meriones_unguiculatus	Mongolian jird	ens:Mammalia	6.3	<https://www.ensembl.org/Meriones_unguiculatus>	ens:taxon#10047
+:Cavia_aperea	Brazilian guinea pig	ens:Mammalia	6.0	<https://www.ensembl.org/Cavia_aperea>	ens:taxon#37548
+:Monodelphis_domestica	Gray short-tailed opossum	ens:Mammalia	5.1	<https://www.ensembl.org/Monodelphis_domestica>	ens:taxon#13616
+:Mus_musculus	House mouse	ens:Mammalia	4.0	<https://www.ensembl.org/Mus_musculus>	ens:taxon#10090
+:Mesocricetus_auratus	Golden hamster	ens:Mammalia	3.9	<https://www.ensembl.org/Mesocricetus_auratus>	ens:taxon#10036
+:Rattus_norvegicus	Norway rat	ens:Mammalia	3.8	<https://www.ensembl.org/Rattus_norvegicus>	ens:taxon#10116
+:Mus_spicilegus	Mound-building mouse	ens:Mammalia	3.5	<https://www.ensembl.org/Mus_spicilegus>	ens:taxon#10103
+:Gopherus_agassizii	Desert tortoise	ens:Reptilia	62.8	<https://www.ensembl.org/Gopherus_agassizii>	ens:taxon#38772
+:Pogona_vitticeps	Central bearded dragon	ens:Reptilia	12.0	<https://www.ensembl.org/Pogona_vitticeps>	ens:taxon#103695
+:Anolis_carolinensis	Green anole	ens:Reptilia	7.2	<https://www.ensembl.org/Anolis_carolinensis>	ens:taxon#28377
+:Esox_lucius	Northern pike	ens:Teleostei	30.0	<https://www.ensembl.org/Esox_lucius>	ens:taxon#8010
+:Scophthalmus_maximus	Turbot	ens:Teleostei	26.0	<https://www.ensembl.org/Scophthalmus_maximus>	ens:taxon#52904
+:Clupea_harengus	Atlantic herring	ens:Teleostei	22.0	<https://www.ensembl.org/Clupea_harengus>	ens:taxon#7950
+:Electrophorus_electricus	Electric eel	ens:Teleostei	12.6	<https://www.ensembl.org/Electrophorus_electricus>	ens:taxon#8005
+:Neogobius_melanostomus	Round goby	ens:Teleostei	4.0	<https://www.ensembl.org/Neogobius_melanostomus>	ens:taxon#47308
+:Betta_splendens	Siamese fighting fish	ens:Teleostei	2.0	<https://www.ensembl.org/Betta_splendens>	ens:taxon#158456
