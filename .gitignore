@@ -2,7 +2,7 @@
 *.log
 logs
 
-#VIM specific
+#VIM spegcific
 tags
 .*.swp
 .*.swo
@@ -27,3 +27,9 @@ project/plugins/project/
 **/.ipynb_checkpoints/*
 __pycache__/
 /data.xml
+expressions/.gitignore
+expressions/all.dvc
+expressions/all/
+expressions/by_animal_class.dvc
+expressions/by_animal_class/
+expressions/by_class_tissue.dvc

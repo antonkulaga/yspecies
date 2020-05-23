@@ -1,0 +1,7 @@
+md5: f3e21f09261fb82141851d77e57c3678
+outs:
+- md5: 3ef94ae482bf5d095a206ffa7a2a28f1.dir
+  path: by_animal_class
+  cache: true
+  metric: false
+  persist: false
