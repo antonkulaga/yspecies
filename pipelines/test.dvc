@@ -1,0 +1,14 @@
+md5: 9cf8604fb5a0a7d348b6b0d2bd10bd66
+cmd: papermill -f data/input/parameters/test.yaml notebooks/3d_plots_test.ipynb data/output/notebooks/test.ipynb
+wdir: ..
+deps:
+- md5: 8770f78e8f8b5af94141e33aef060d65
+  path: data/input/parameters/test.yaml
+- md5: f6a3fae0fa6dd2125ed6e4f07a4a46c8
+  path: notebooks/3d_plots_test.ipynb
+outs:
+- md5: 73157e06bff527f4edf4e30c479989ec
+  path: data/output/notebooks/test.ipynb
+  cache: true
+  metric: false
+  persist: false
