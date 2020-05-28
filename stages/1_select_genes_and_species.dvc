@@ -1,6 +1,6 @@
-md5: 2dc9f3ae45ab1573f5034d9fbfbd73be
-cmd: papermill -f stages/parameters/1_select_genes_and_species.yaml  --progress-bar
-  --report-mode notebooks/1_select_genes_and_species.ipynb data/output/notebooks/1_select_genes_and_species_report.ipynb
+md5: b46f19c861e6ed2d2e9e61da9bcd9138
+cmd: papermill -f stages/1_select_genes_and_species.yaml  --progress-bar --report-mode
+  notebooks/1_select_genes_and_species.ipynb data/output/notebooks/1_select_genes_and_species_report.ipynb
 wdir: ..
 deps:
 - md5: 3ef94ae482bf5d095a206ffa7a2a28f1.dir
@@ -10,7 +10,7 @@ deps:
 - md5: e326e3ff8f37c7f3abeefbadce47aa98
   path: data/input/samples.tsv
 - md5: 7581979121e68655dc45438d3a2cf4a4
-  path: stages/parameters/1_select_genes_and_species.yaml
+  path: stages/1_select_genes_and_species.yaml
 - md5: ef2cda3fbb44dcada76d17e4646fb267
   path: notebooks/1_select_genes_and_species.ipynb
 outs:

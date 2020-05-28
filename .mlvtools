@@ -1,7 +1,0 @@
-{
-    "path": {
-        "python_script_root_dir": "./pipeline/scripts",
-        "dvc_cmd_root_dir": "./pipeline/dvc"
-        },
-    "ignore_keys": ["# no effect","# No effect"]
-}
