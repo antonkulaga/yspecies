@@ -1,0 +1,4 @@
+drop_species:  ["Tursiops_truncatus","Sarcophilus_harrisii","Cavia_aperea", "Tupaia_belangeri", "Erinaceus_europaeus"]
+orthology: "one2oneplus_directed"
+reference_species: "Homo_sapiens"
+animal_class: "mammals"
