@@ -1,11 +1,11 @@
-md5: b46f19c861e6ed2d2e9e61da9bcd9138
+md5: b90c27989dbcfe2da333e3a7e5796c44
 cmd: papermill -f stages/1_select_genes_and_species.yaml  --progress-bar --report-mode
   notebooks/1_select_genes_and_species.ipynb data/output/notebooks/1_select_genes_and_species_report.ipynb
 wdir: ..
 deps:
 - md5: 3ef94ae482bf5d095a206ffa7a2a28f1.dir
   path: data/input/genes/by_animal_class
-- md5: a039595be955ecf4ad5b0f5c19863a90
+- md5: a3036f399169a18f53e797c9d385bf25
   path: data/input/species.tsv
 - md5: e326e3ff8f37c7f3abeefbadce47aa98
   path: data/input/samples.tsv
@@ -14,12 +14,12 @@ deps:
 - md5: ef2cda3fbb44dcada76d17e4646fb267
   path: notebooks/1_select_genes_and_species.ipynb
 outs:
-- md5: 7da913f27754f0fd2ecc4b1f58d928b7
+- md5: 70306a912c59fc862a1fc2a46db9fcb1
   path: data/interim/selected_species.tsv
   cache: true
   metric: false
   persist: false
-- md5: 4c22ce528e6542be77b538cc6716da30
+- md5: ccdab8068a57cbc11a72f8ce7ffa61c8
   path: data/interim/selected_samples.tsv
   cache: true
   metric: false
@@ -29,7 +29,7 @@ outs:
   cache: true
   metric: false
   persist: false
-- md5: 7fe0d8d09366de0a5af5cec2515386e7
+- md5: cf9298ac1cfd0a7a060250e28d61f318
   path: data/output/notebooks/1_select_genes_and_species_report.ipynb
   cache: true
   metric: false
