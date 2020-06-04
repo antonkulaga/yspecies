@@ -3,6 +3,7 @@ channels:
   - conda-forge
   - bioconda
   - defaults
+  - antonkulaga
 dependencies:
   - _libgcc_mutex=0.1
   - _openmp_mutex=4.5
@@ -233,6 +234,7 @@ dependencies:
   - zipp=3.1.0
   - zlib=1.2.11
   - zstd=1.4.4
+  - yspecies=0.0.1
   - pip:
     - docstring-parser==0.6.1
     - pydantic==1.5.1

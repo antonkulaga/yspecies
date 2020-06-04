@@ -1,36 +1,36 @@
-md5: b90c27989dbcfe2da333e3a7e5796c44
 cmd: papermill -f stages/1_select_genes_and_species.yaml  --progress-bar --report-mode
   notebooks/1_select_genes_and_species.ipynb data/output/notebooks/1_select_genes_and_species_report.ipynb
 wdir: ..
 deps:
-- md5: 3ef94ae482bf5d095a206ffa7a2a28f1.dir
-  path: data/input/genes/by_animal_class
-- md5: a3036f399169a18f53e797c9d385bf25
-  path: data/input/species.tsv
-- md5: e326e3ff8f37c7f3abeefbadce47aa98
-  path: data/input/samples.tsv
-- md5: 7581979121e68655dc45438d3a2cf4a4
-  path: stages/1_select_genes_and_species.yaml
-- md5: ef2cda3fbb44dcada76d17e4646fb267
-  path: notebooks/1_select_genes_and_species.ipynb
+- path: data/input/genes/by_animal_class
+  md5: 3ef94ae482bf5d095a206ffa7a2a28f1.dir
+- path: data/input/species.tsv
+  md5: 247be9ff2b1e8294236382c0b0677da3
+- path: data/input/samples.tsv
+  md5: 1307d5e4bcd7d8f2d2ce757b452e3073
+- path: stages/1_select_genes_and_species.yaml
+  md5: 118df35d10e25ab9ee1427e35a7be560
+- path: notebooks/1_select_genes_and_species.ipynb
+  md5: c675ec5acc66d74abf450011a4b019d8
 outs:
-- md5: 70306a912c59fc862a1fc2a46db9fcb1
-  path: data/interim/selected_species.tsv
+- path: data/interim/selected_species.tsv
   cache: true
   metric: false
   persist: false
-- md5: ccdab8068a57cbc11a72f8ce7ffa61c8
-  path: data/interim/selected_samples.tsv
+  md5: 1be2a707b260be58c7ecfa4a2d346329
+- path: data/interim/selected_samples.tsv
   cache: true
   metric: false
   persist: false
-- md5: 728be24b823e79d24b837ebb0f432fbf
-  path: data/interim/selected_genes.tsv
+  md5: f5cd4774fbe208ffadc7c795a5a0b4a1
+- path: data/interim/selected_genes.tsv
   cache: true
   metric: false
   persist: false
-- md5: cf9298ac1cfd0a7a060250e28d61f318
-  path: data/output/notebooks/1_select_genes_and_species_report.ipynb
+  md5: 5a77af8e721e73c90e251b06cfe01d6c
+- path: data/output/notebooks/1_select_genes_and_species_report.ipynb
   cache: true
   metric: false
   persist: false
+  md5: e7552188a32d9c65d94a8b856d2f9f3c
+md5: 2e9db4ab8d36340ce22ad22d318c86ff

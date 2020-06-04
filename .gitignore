@@ -10,7 +10,7 @@ tags
 #MAC OS specific
 .DS_Store
 
-# sbt specific
+# sbt specificf
 .cache/
 .history/
 .lib/
