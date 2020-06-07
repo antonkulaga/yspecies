@@ -5,6 +5,6 @@ except ImportError:
 
 setup(name='yspecies',
       version='0.0.3',
-      py_modules=['yspecies'],
+      py_modules=['yspecies','enums', 'dataset'],
       packages=find_packages(),
       description='yspecies')

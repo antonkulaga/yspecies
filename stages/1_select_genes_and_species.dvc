@@ -5,32 +5,37 @@ deps:
 - path: data/input/genes/by_animal_class
   md5: 3ef94ae482bf5d095a206ffa7a2a28f1.dir
 - path: data/input/species.tsv
-  md5: 247be9ff2b1e8294236382c0b0677da3
+  md5: 21ec196edbcecfe41fb3280ca9739d66
 - path: data/input/samples.tsv
-  md5: 1307d5e4bcd7d8f2d2ce757b452e3073
+  md5: 857a81cec86a16b17ebd7b37f9b579b7
 - path: stages/1_select_genes_and_species.yaml
-  md5: 118df35d10e25ab9ee1427e35a7be560
+  md5: 0f58bcf307f5ba4fd3b431cd26edb716
 - path: notebooks/1_select_genes_and_species.ipynb
-  md5: c675ec5acc66d74abf450011a4b019d8
+  md5: 20cbb086bd48094c87e9775ddda30102
 outs:
 - path: data/interim/selected_species.tsv
   cache: true
   metric: false
   persist: false
-  md5: 1be2a707b260be58c7ecfa4a2d346329
+  md5: 7391caea6b97840e7ba477e6ee6e6063
 - path: data/interim/selected_samples.tsv
   cache: true
   metric: false
   persist: false
-  md5: f5cd4774fbe208ffadc7c795a5a0b4a1
+  md5: a0ba6a5a3823a2253d5da0ef5d0c1184
 - path: data/interim/selected_genes.tsv
   cache: true
   metric: false
   persist: false
-  md5: 5a77af8e721e73c90e251b06cfe01d6c
+  md5: 579406b3df346f7f811a4b1ffff3ce45
+- path: data/interim/selected_expressions.tsv
+  cache: true
+  metric: false
+  persist: false
+  md5: f194d0d342c0af8698136c9a59498285
 - path: data/output/notebooks/1_select_genes_and_species_report.ipynb
   cache: true
   metric: false
   persist: false
-  md5: e7552188a32d9c65d94a8b856d2f9f3c
-md5: 2e9db4ab8d36340ce22ad22d318c86ff
+  md5: 110841296aa5448dcb19958784f0884f
+md5: 7384387ae7781213d6c63db000daf59e
