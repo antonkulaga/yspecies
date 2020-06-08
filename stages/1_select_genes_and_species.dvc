@@ -11,7 +11,7 @@ deps:
 - path: stages/1_select_genes_and_species.yaml
   md5: 0f58bcf307f5ba4fd3b431cd26edb716
 - path: notebooks/1_select_genes_and_species.ipynb
-  md5: 20cbb086bd48094c87e9775ddda30102
+  md5: 9c6eb4a055f0c2119dfb0c9f840cea5b
 outs:
 - path: data/interim/selected_species.tsv
   cache: true
@@ -32,10 +32,10 @@ outs:
   cache: true
   metric: false
   persist: false
-  md5: f194d0d342c0af8698136c9a59498285
+  md5: 144ca59c7b81156405c8375b273ea945
 - path: data/output/notebooks/1_select_genes_and_species_report.ipynb
   cache: true
   metric: false
   persist: false
-  md5: 110841296aa5448dcb19958784f0884f
-md5: 7384387ae7781213d6c63db000daf59e
+  md5: 39e068da96392979c37ca550fd894d26
+md5: d4217558fa297bf4831ad3c90002c193
