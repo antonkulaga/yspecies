@@ -3,7 +3,7 @@ cmd: papermill -f stages/1_select_genes_and_species.yaml  --progress-bar --repor
 wdir: ..
 deps:
 - path: data/input/genes/by_animal_class
-  md5: 3ef94ae482bf5d095a206ffa7a2a28f1.dir
+  md5: 6780ab4e9fe70fabbc8ca78d2a7a2f05.dir
 - path: data/input/species.tsv
   md5: 21ec196edbcecfe41fb3280ca9739d66
 - path: data/input/samples.tsv
@@ -38,4 +38,4 @@ outs:
   metric: false
   persist: false
   md5: 39e068da96392979c37ca550fd894d26
-md5: d4217558fa297bf4831ad3c90002c193
+md5: 713b425e77815bccb80abeb5660a5b9d

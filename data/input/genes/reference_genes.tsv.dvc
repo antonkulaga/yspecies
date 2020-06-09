@@ -1,0 +1,7 @@
+md5: 97cd43213ae59b1b2453c06388c328ef
+outs:
+- md5: a01a49c06bb460d68b6cbcaccc75fe31
+  path: reference_genes.tsv
+  cache: true
+  metric: false
+  persist: false
