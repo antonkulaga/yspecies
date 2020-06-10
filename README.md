@@ -21,4 +21,12 @@ Temporaly some classes are copy-pasted from xspecies repository to make notebook
 yspecies package
 ----------------
 
-The code in yspecies folder is a conda package with 
+The code in yspecies folder is a conda package that is used inside notebooks
+
+Running stages
+--------------
+DVC stages are inside stages folder (together with yaml files in parameters). To run dvc stage just use dvc repro command, like:
+```bash
+dvc repro -f stages/1_select_genes_and_species.dvc
+```
+Most of the stages also produce notebooks together with files in the output

@@ -1,4 +1,7 @@
-drop_species:  []
+drop_species:   ["Bos_grunniens", "Ornithorhynchus_anatinus", "Erinaceus_europaeus"]
+drop_samples: ["SRR032135"]
+tissues: ["all"]
+min_samples_per_species: 2
 orthology: "one2oneplus_directed"
 reference_species: "Homo_sapiens"
 animal_class: "Mammalia"
