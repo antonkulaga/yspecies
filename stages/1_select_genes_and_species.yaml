@@ -19,12 +19,7 @@ drop_samples:
   - "SRR908037" #pooled
   - "SRR908038" #pooled
 
-
-
-
-
-
-tissues: ["all"]
+tissues: ["Blood", "Skin", "Heart", "Kidney", "Liver", "Brain", "Lung"]
 min_samples_per_species: 2
 orthology: "one2oneplus_directed"
 reference_species: "Homo_sapiens"
