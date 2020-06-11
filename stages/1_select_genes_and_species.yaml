@@ -1,5 +1,29 @@
 drop_species:   ["Bos_grunniens", "Ornithorhynchus_anatinus", "Erinaceus_europaeus"]
-drop_samples: ["SRR032135"]
+drop_samples:
+  - "SRR032135" #champanzee liver Eugen did not like
+  - "SRR5928355" #newborn
+  - "SRR5928357" #newborn
+  - "SRR5928359" #newborn
+  - "SRR306394" #newborn
+  - "SRR306397" #newborn
+  - "SRR306400" #newborn
+  - "SRR8309416" #brainstem
+  - "SRR8309417" #brainstem
+  - "SRR9066909" #old
+  - "SRR5767265" #too young
+  - "SRR5767266" #too young
+  - "SRR5767268" #too young
+  - "SRR5767269" #too young
+  - "SRR5767270" #too young
+  - "SRR867587" #pooled
+  - "SRR908037" #pooled
+  - "SRR908038" #pooled
+
+
+
+
+
+
 tissues: ["all"]
 min_samples_per_species: 2
 orthology: "one2oneplus_directed"
