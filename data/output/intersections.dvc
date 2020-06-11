@@ -1,0 +1,7 @@
+md5: 5c7fcaa76c997a5e2baca79409a6b861
+outs:
+- md5: 595f3f9b5025b948891afff293bfeb8c.dir
+  path: intersections
+  cache: true
+  metric: false
+  persist: false
