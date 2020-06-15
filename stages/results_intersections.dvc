@@ -1,0 +1,44 @@
+cmd: papermill -f stages/results_intersections.yaml  --progress-bar --report-mode
+  notebooks/results_intersections.ipynb data/output/notebooks/results_intersections.ipynb
+wdir: ..
+deps:
+- path: data/output/external/causality
+- path: data/output/external/linear
+- path: /data/sources/species/data/output/external/shap
+outs:
+- path: data/output/notebooks/compare_results.ipynb
+  cache: true
+  metric: false
+  persist: false
+- path: data/output/intersections/pro_intersections.tsv
+  cache: true
+  metric: false
+  persist: false
+- path: data/output/intersections/anti_intersections.tsv
+  cache: true
+  metric: false
+  persist: false
+- path: data/output/intersections/pro_7_4_intersections.tsv
+  cache: true
+  metric: false
+  persist: false
+- path: data/output/intersections/anti_7_4_intersections.tsv
+  cache: true
+  metric: false
+  persist: false
+- path: data/output/intersections/genage_pro_human_intersections.tsv
+  cache: true
+  metric: false
+  persist: false
+- path: data/output/intersections/genage_anti_human_intersections.tsv
+  cache: true
+  metric: false
+  persist: false
+- path: data/output/intersections/genage_pro_model_intersections.tsv
+  cache: true
+  metric: false
+  persist: false
+- path: data/output/intersections/genage_anti_model_intersections.tsv
+  cache: true
+  metric: false
+  persist: false
