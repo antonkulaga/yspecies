@@ -21,6 +21,18 @@ drop_samples:
   - "SRR306838" #male mistaken for female Vlada's outlier
   - "SRR8991100" #happened to be single-cell - Vlada's outlier
   - "SRR306847" #Vlada's outlier that looks ok otherwise
+  - "SRR8750397" #may be single-cell
+  - "SRR8750398" #may be single-cell
+  - "SRR8750399" #may be single-cell
+  - "SRR3109726" #old kidney
+  - "SRR3109728" #old kidney
+  - "SRR3403827" #brainsteam
+  - "SRR3403828" #brainsteam
+  - "SRR306404" #hypoxia exposed
+  - "SRR306406" #hypoxia exposed
+
+
+
 
 tissues: ["Heart", "Kidney", "Liver", "Brain", "Lung"] #may add "Blood", "Skin"
 min_samples_per_species: 2
