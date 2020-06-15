@@ -18,8 +18,11 @@ drop_samples:
   - "SRR867587" #pooled
   - "SRR908037" #pooled
   - "SRR908038" #pooled
+  - "SRR306838" #male mistaken for female Vlada's outlier
+  - "SRR8991100" #happened to be single-cell - Vlada's outlier
+  - "SRR306847" #Vlada's outlier that looks ok otherwise
 
-tissues: ["Blood", "Skin", "Heart", "Kidney", "Liver", "Brain", "Lung"]
+tissues: ["Heart", "Kidney", "Liver", "Brain", "Lung"] #may add "Blood", "Skin"
 min_samples_per_species: 2
 orthology: "one2oneplus_directed"
 reference_species: "Homo_sapiens"

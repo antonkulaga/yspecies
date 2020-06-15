@@ -3,42 +3,57 @@ cmd: papermill -f stages/results_intersections.yaml  --progress-bar --report-mod
 wdir: ..
 deps:
 - path: data/output/external/causality
+  md5: db1879d58e08010d49aaa99e15ee5f29.dir
 - path: data/output/external/linear
-- path: /data/sources/species/data/output/external/shap
+  md5: ccaa8c167006ee5e320c709bfcdc0d6d.dir
+- path: data/output/external/shap
+  md5: d4ebe7f165029c2bbb6b5beec8846bc3.dir
+- path: data/output/external/causality/causal_relations_5_tissues_anton_species_5_bootstraps.csv
+  md5: e3cf4199fa5234888c6fe0f388f87426
 outs:
-- path: data/output/notebooks/compare_results.ipynb
+- path: data/output/notebooks/results_intersections.ipynb
   cache: true
   metric: false
   persist: false
+  md5: 690081131a15bf57b0e66d1400787b6d
 - path: data/output/intersections/pro_intersections.tsv
   cache: true
   metric: false
   persist: false
+  md5: c664ebf1af02f1f0e353b7c3cfd1ee4f
 - path: data/output/intersections/anti_intersections.tsv
   cache: true
   metric: false
   persist: false
+  md5: 1884b113f217f0508ef32943b5247b52
 - path: data/output/intersections/pro_7_4_intersections.tsv
   cache: true
   metric: false
   persist: false
+  md5: faae05c15679912496d94d5287e03be4
 - path: data/output/intersections/anti_7_4_intersections.tsv
   cache: true
   metric: false
   persist: false
+  md5: 102a9b3b3963804d1744971d75ab1d46
 - path: data/output/intersections/genage_pro_human_intersections.tsv
   cache: true
   metric: false
   persist: false
+  md5: 13a9d5a369f5d0b5c7256766a5e73bb5
 - path: data/output/intersections/genage_anti_human_intersections.tsv
   cache: true
   metric: false
   persist: false
+  md5: 8a15cdb47444a911a68eb4e971c8b231
 - path: data/output/intersections/genage_pro_model_intersections.tsv
   cache: true
   metric: false
   persist: false
+  md5: 08799f37b38c803836c3a4dee2d6df6e
 - path: data/output/intersections/genage_anti_model_intersections.tsv
   cache: true
   metric: false
   persist: false
+  md5: e41e3c11a74ba8623fb07e611422e87d
+md5: 0ab1a486f475300afb98505659923c87

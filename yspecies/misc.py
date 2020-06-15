@@ -15,52 +15,72 @@ class Locations:
 
     class Genes:
         def __init__(self, base: Path):
-            self.genes = base
-            self.by_class = self.genes / "by_animal_class"
-            self.all = self.genes / "all"
+            self.dir: Path = base
+            self.genes = self.dir
+            self.by_class = self.dir / "by_animal_class"
+            self.all = self.dir / "all"
 
     class Expressions:
 
         def __init__(self, base: Path):
-            self.expressions = base
-            self.by_class: Path = self.expressions / "by_animal_class"
+            self.dir = base
+            self.expressions = self.dir
+            self.by_class: Path = self.dir / "by_animal_class"
 
     class Input:
+
+        class Annotations:
+            class Genage:
+                def __init__(self, base: Path):
+                    self.dir = base
+                    self.orthologs = Locations.Genes(base / "genage_orthologs")
+                    self.conversion = self.dir / "genage_conversion.tsv"
+                    self.human = self.dir / "genage_human.tsv"
+                    self.models = self.dir / "genage_models.tsv"
+
+            def __init__(self, base: Path):
+                self.dir = base
+                self.genage = Locations.Input.Annotations.Genage(self.dir / "genage")
+
         def __init__(self, base: Path):
-            self.input = base
-            self.genes: Locations.Genes = Locations.Genes(self.input / "genes")
-            self.expressions: Locations.Expressions = Locations.Expressions(self.input / "expressions")
-            self.species = self.input / "species.tsv"
-            self.samples = self.input / "samples.tsv"
+            self.dir = base
+            self.intput = self.dir
+            self.genes: Locations.Genes = Locations.Genes(self.dir / "genes")
+            self.expressions: Locations.Expressions = Locations.Expressions(self.dir / "expressions")
+            self.species = self.dir / "species.tsv"
+            self.samples = self.dir / "samples.tsv"
+            self.annotations = Locations.Input.Annotations(self.dir / "annotations")
 
     class Interim:
         def __init__(self, base: Path):
-            self.interim = base
-            self.expressions = self.interim / "selected_expressions.tsv"
-            self.samples = self.interim / "selected_samples.tsv"
-            self.species = self.interim / "selected_species.tsv"
-            self.genes = self.interim / "selected_genes.tsv"
+            self.dir = base
+            self.expressions = self.dir / "selected_expressions.tsv"
+            self.samples = self.dir / "selected_samples.tsv"
+            self.species = self.dir / "selected_species.tsv"
+            self.genes = self.dir / "selected_genes.tsv"
 
     class Output:
 
         class External:
             def __init__(self, base: Path):
-                self.external = base
-                self.linear = self.external / "linear"
-                self.shap = self.external / "shap"
-                self.causal = self.external / "causal"
+                self.dir: Path = base
+                self.linear = self.dir / "linear"
+                self.shap = self.dir / "shap"
+                self.causal = self.dir / "causal"
 
         def __init__(self, base: Path):
-            self.output = base
-            self.external = Locations.Output.External(self.output / "external")
+            self.dir = base
+            self.external = Locations.Output.External(self.dir / "external")
+            self.intersections = self.dir / "intersections"
 
 
     def __init__(self, base: str):
         self.base: Path = Path(base)
         self.data: Path = self.base / "data"
-        self.input: Path = Locations.Input(self.data / "input")
-        self.interim: Path = Locations.Interim(self.data / "interim")
-        self.output: Path =  Locations.Output(self.data / "output")
+        self.dir: Path = self.base / "data"
+        self.input: Locations.Input = Locations.Input(self.dir / "input")
+        self.interim: Locations.Interim = Locations.Interim(self.dir / "interim")
+        self.output: Locations.Output =  Locations.Output(self.dir / "output")
 
 
 
