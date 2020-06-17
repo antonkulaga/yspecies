@@ -3,39 +3,44 @@ cmd: papermill -f stages/1_select_genes_and_species.yaml  --progress-bar --repor
 wdir: ..
 deps:
 - path: data/input/genes/by_animal_class
-  md5: 5bb1b3db720c77cb0800fa40f0196f29.dir
 - path: data/input/species.tsv
-  md5: cdf6379f1d78780afc6f650b10636494
 - path: data/input/samples.tsv
-  md5: 17e2bb8020c8ac1f8c3c7445fac901c3
 - path: stages/1_select_genes_and_species.yaml
-  md5: 851f303fcad2827b93b311e254575979
 - path: notebooks/1_select_genes_and_species.ipynb
-  md5: 804fae6b7f75a616e7974a053756ee4c
 outs:
 - path: data/interim/selected_species.tsv
   cache: true
   metric: false
   persist: false
-  md5: 347669d6814ed274cc9f67a98401d348
 - path: data/interim/selected_samples.tsv
   cache: true
   metric: false
   persist: false
-  md5: a5c232b07c20fc8b95e4cfa66bcc3125
 - path: data/interim/selected_genes.tsv
   cache: true
   metric: false
   persist: false
-  md5: 2eb0910c32fab62750972bf7292a25c1
 - path: data/interim/selected_expressions.tsv
   cache: true
   metric: false
   persist: false
-  md5: f32d890c15ef7e5f90173391466e0192
+- path: data/output/counts/species_sample_count.tsv.tsv
+  cache: true
+  metric: false
+  persist: false
+- path: data/output/counts/species_sample_count.tsv
+  cache: true
+  metric: false
+  persist: false
+- path: data/output/counts/tissue_sample_count.tsv
+  cache: true
+  metric: false
+  persist: false
+- path: data/output/counts/species_tissue_sample_count.tsv
+  cache: true
+  metric: false
+  persist: false
 - path: data/output/notebooks/1_select_genes_and_species_report.ipynb
   cache: true
   metric: false
   persist: false
-  md5: 2a71e00a0d875cb9cae00f81b55c26ef
-md5: fa8e88582d0cc0b9e9c4225084bdd33a
