@@ -1,0 +1,87 @@
+select_genes:
+  cmd: papermill -f stages/1_select_genes_and_species.yaml  --progress-bar --report-mode
+    notebooks/1_select_genes_and_species.ipynb data/output/notebooks/1_select_genes_and_species_report.ipynb
+  deps:
+  - path: data/input/genes/by_animal_class
+    md5: 5bb1b3db720c77cb0800fa40f0196f29.dir
+  - path: data/input/samples.tsv
+    md5: 17e2bb8020c8ac1f8c3c7445fac901c3
+  - path: data/input/species.tsv
+    md5: cdf6379f1d78780afc6f650b10636494
+  - path: notebooks/1_select_genes_and_species.ipynb
+    md5: 201de29fbe33b8bf5b546fcf16ec15f6
+  - path: stages/1_select_genes_and_species.yaml
+    md5: 22f95cba7413c7c641fec0720b8338ee
+  outs:
+  - path: data/interim/selected_expressions.tsv
+    md5: d872ec9f5ff9ac16d7dd6d877cc077b1
+  - path: data/interim/selected_genes.tsv
+    md5: dc2b3b921d9fb4ed358a085c53426307
+  - path: data/interim/selected_samples.tsv
+    md5: f3a11a4ad6550a7f356bf51e7a4e183b
+  - path: data/interim/selected_species.tsv
+    md5: 74a64f77b443ed7b6e9b44240953ec7a
+  - path: data/output/counts/species_sample_count.tsv
+    md5: eced40b842c0ec786a43d0e8c1da073d
+  - path: data/output/counts/species_tissue_sample_count.tsv
+    md5: 7e78391b84b265bdc0db65ef0f293056
+  - path: data/output/counts/tissue_sample_count.tsv
+    md5: 95d7d50886117aae30a8ee8c335f5076
+  - path: data/output/notebooks/1_select_genes_and_species_report.ipynb
+    md5: c170a67d0a586c49d1442695c78bdcbc
+select_samples:
+  cmd: papermill -f parameters/select_samples.yaml  --progress-bar --report-mode notebooks/select_samples.ipynb
+    data/output/notebooks/select_samples.ipynb
+  deps:
+  - path: data/input/genes/by_animal_class
+    md5: 5bb1b3db720c77cb0800fa40f0196f29.dir
+  - path: data/input/samples.tsv
+    md5: 17e2bb8020c8ac1f8c3c7445fac901c3
+  - path: data/input/species.tsv
+    md5: cdf6379f1d78780afc6f650b10636494
+  - path: notebooks/select_samples.ipynb
+    md5: 201de29fbe33b8bf5b546fcf16ec15f6
+  - path: parameters/select_samples.yaml
+    md5: 22f95cba7413c7c641fec0720b8338ee
+  outs:
+  - path: data/interim/selected_expressions.tsv
+    md5: d872ec9f5ff9ac16d7dd6d877cc077b1
+  - path: data/interim/selected_genes.tsv
+    md5: dc2b3b921d9fb4ed358a085c53426307
+  - path: data/interim/selected_samples.tsv
+    md5: f3a11a4ad6550a7f356bf51e7a4e183b
+  - path: data/interim/selected_species.tsv
+    md5: 74a64f77b443ed7b6e9b44240953ec7a
+  - path: data/output/counts/species_sample_count.tsv
+    md5: eced40b842c0ec786a43d0e8c1da073d
+  - path: data/output/counts/species_tissue_sample_count.tsv
+    md5: 7e78391b84b265bdc0db65ef0f293056
+  - path: data/output/counts/tissue_sample_count.tsv
+    md5: 95d7d50886117aae30a8ee8c335f5076
+  - path: data/output/notebooks/select_samples.ipynb
+    md5: fdff44ec69c61deaaf6a96fb6f661266
+results_intersections:
+  cmd: papermill -f parameters/results_intersections.yaml  --progress-bar --report-mode
+    notebooks/results_intersections.ipynb data/output/notebooks/results_intersections.ipynb
+  deps:
+  - path: data/output/external/causality
+    md5: c00e3428ab5aac19fdc6c5157b09fb33.dir
+  - path: data/output/external/causality/causal_relations_5_tissues_anton_species_5_bootstraps.csv
+    md5: e3cf4199fa5234888c6fe0f388f87426
+  - path: data/output/external/linear
+    md5: ccaa8c167006ee5e320c709bfcdc0d6d.dir
+  - path: data/output/external/shap
+    md5: fb35c5a65c49be61d7dacdc1fba3764b.dir
+  outs:
+  - path: data/output/intersections/genage_human_intersections.tsv
+    md5: 7cd1e7ff10c8e35b41e884f355911437
+  - path: data/output/intersections/genage_model_intersections.tsv
+    md5: adaefd5646ae0c275ec680989663ef9c
+  - path: data/output/intersections/intersections.tsv
+    md5: d9748c0547ec3c01f122c2a967e6d37e
+  - path: data/output/intersections/intersections_5_and_7.tsv
+    md5: 5606ff2b9dd0269104b07509760fb824
+  - path: data/output/intersections/new_old_comparison.tsv
+    md5: 440391dfccd04e58897f3bb1c898b74b
+  - path: data/output/notebooks/results_intersections.ipynb
+    md5: 4aa03ee3831120e7a7d76ed0351e9a46

@@ -1,0 +1,35 @@
+stages:
+  select_samples:
+    cmd: papermill -f parameters/select_samples.yaml  --progress-bar --report-mode
+      notebooks/select_samples.ipynb data/output/notebooks/select_samples.ipynb
+    deps:
+      - parameters/select_samples.yaml
+      - data/input/genes/by_animal_class
+      - data/input/species.tsv
+      - data/input/samples.tsv
+      - notebooks/select_samples.ipynb
+    outs:
+      - data/interim/selected_species.tsv
+      - data/interim/selected_samples.tsv
+      - data/interim/selected_genes.tsv
+      - data/interim/selected_expressions.tsv
+      - data/output/counts/species_sample_count.tsv
+      - data/output/counts/tissue_sample_count.tsv
+      - data/output/counts/species_tissue_sample_count.tsv
+      - data/output/notebooks/select_samples.ipynb
+  
+  results_intersections:
+    cmd: papermill -f parameters/results_intersections.yaml  --progress-bar --report-mode
+      notebooks/results_intersections.ipynb data/output/notebooks/results_intersections.ipynb
+    deps:
+      - data/output/external/causality
+      - data/output/external/linear
+      - data/output/external/shap
+      - data/output/external/causality/causal_relations_5_tissues_anton_species_5_bootstraps.csv
+    outs:
+      - data/output/notebooks/results_intersections.ipynb
+      - data/output/intersections/genage_human_intersections.tsv
+      - data/output/intersections/genage_model_intersections.tsv
+      - data/output/intersections/intersections_5_and_7.tsv
+      - data/output/intersections/intersections.tsv
+      - data/output/intersections/new_old_comparison.tsv
