@@ -42,4 +42,4 @@ min_samples_per_species: 2
 orthology: "one2oneplus_directed"
 reference_species: "Homo_sapiens"
 animal_class: "Mammalia"
-na_threshold: 0.01
+na_threshold: 0.1

@@ -54,10 +54,7 @@ class Locations:
     class Interim:
         def __init__(self, base: Path):
             self.dir = base
-            self.expressions = self.dir / "selected_expressions.tsv"
-            self.samples = self.dir / "selected_samples.tsv"
-            self.species = self.dir / "selected_species.tsv"
-            self.genes = self.dir / "selected_genes.tsv"
+            self.selected = self.dir / "selected"
 
     class Output:
 

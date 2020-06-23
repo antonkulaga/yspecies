@@ -1,7 +1,3 @@
-md5: d05e7418c0cbac81de2c8b4d74123b3d
 outs:
 - md5: 5eb3708a91e8f9ed59dabe03658e9c73.dir
   path: genage
-  cache: true
-  metric: false
-  persist: false

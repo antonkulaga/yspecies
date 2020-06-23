@@ -22,11 +22,47 @@ yspecies package
 ----------------
 
 The code in yspecies folder is a conda package that is used inside notebooks
+The package can be installed from conda https://anaconda.org/antonkulaga/yspecies
+```bash
+conda install -c antonkulaga yspecies
+```
 
 Running stages
 --------------
-DVC stages are inside stages folder (together with yaml files in parameters). To run dvc stage just use dvc repro command, like:
+DVC stages are in dvc.yaml file, to run dvc stage just use dvc repro <stage_name>:
 ```bash
-dvc repro -f stages/1_select_genes_and_species.dvc
+dvc repro 
 ```
 Most of the stages also produce notebooks together with files in the output
+
+Yspecies classes
+----------------
+
+### Indexing ###
+
+One of the key classes is ExpressionDataset class:
+```python
+e = ExpressionDataset("5_tissues", expressions, genes, samples)
+e
+```
+It allows indexing by genes:
+```python
+e[["ENSG00000073921", "ENSG00000139687"]]
+```
+By samples:
+```python
+e[["ENSG00000073921", "ENSG00000139687"]]
+```
+Both:
+```python
+e[["ENSG00000073921", "ENSG00000139687"],["SRR2308103","SRR1981979"]]
+```
+### Filtering ###
+ExpressionDataset class has by_genes and by_samples properties which allow indexing and filtering.
+For instance filtering only blood tissue:
+```python
+e.by_samples.filter(lambda s: s["tissue"]=="Blood").samples.head(10)
+```
+
+
+The class is also Jupyter-friendly with _repr_html_() method implemented
