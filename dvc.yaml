@@ -10,9 +10,9 @@ stages:
       - notebooks/select_samples.ipynb
     outs:
       - data/interim/selected_species.tsv
-      - data/interim/selected_samples.tsv
-      - data/interim/selected_genes.tsv
-      - data/interim/selected_expressions.tsv
+      - data/interim/selected/samples.tsv
+      - data/interim/selected/genes.tsv
+      - data/interim/selected/expressions.tsv
       - data/output/counts/species_sample_count.tsv
       - data/output/counts/tissue_sample_count.tsv
       - data/output/counts/species_tissue_sample_count.tsv
