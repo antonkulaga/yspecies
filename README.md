@@ -48,10 +48,12 @@ e
 It allows indexing by genes:
 ```python
 e[["ENSG00000073921", "ENSG00000139687"]]
+#or
+e.by_genes[["ENSG00000073921", "ENSG00000139687"]]
 ```
 By samples:
 ```python
-e[["ENSG00000073921", "ENSG00000139687"]]
+e.by_samples[["SRR2308103","SRR1981979"]]
 ```
 Both:
 ```python
@@ -61,8 +63,7 @@ e[["ENSG00000073921", "ENSG00000139687"],["SRR2308103","SRR1981979"]]
 ExpressionDataset class has by_genes and by_samples properties which allow indexing and filtering.
 For instance filtering only blood tissue:
 ```python
-e.by_samples.filter(lambda s: s["tissue"]=="Blood").samples.head(10)
+e.by_samples.filter(lambda s: s["tissue"]=="Blood")
 ```
-
 
 The class is also Jupyter-friendly with _repr_html_() method implemented
