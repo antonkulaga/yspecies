@@ -1,13 +1,44 @@
-import warnings
-import time
-from datetime import datetime
-from typing import List
+"""
+ExpressionDataset and helper classes
+
+Classes:
+    ExpressionDataset
+    GenesIndexes
+    SamplesIndexes
+"""
+
 from pathlib import Path
-import json
-import pandas as pd
 from typing import Callable
+from typing import List
+
+import pandas as pd
+
 
 class ExpressionDataset:
+
+    @staticmethod
+    def load(name: str,
+             expressions_path: Path,
+             genes_path: Path,
+             samples_path: Path,
+             genes_meta_path: Path = None,
+             species_meta_path: Path = None,
+             sep="\t",
+             validate: bool = True):
+        expressions =  pd.read_csv(expressions_path, sep=sep,  index_col="run")
+        genes = pd.read_csv(genes_path, sep=sep, index_col="Homo_sapiens")
+        samples = pd.read_csv(samples_path, sep=sep,  index_col="run")
+        genes_meta = None if genes_meta_path is None else pd.read_csv(genes_meta_path, sep=sep, index_col="gene") #species	gene	symbol
+        species_meta = None if species_meta_path is None else pd.read_csv(species_meta_path, sep=sep, index_col="species")
+        return ExpressionDataset(name, expressions, genes, samples, genes_meta, species_meta, validate=validate)
+
+    @staticmethod
+    def from_folder(folder: Path,
+             expressions_name: str = "expressions.tsv",
+             genes_name: str = "genes.tsv",
+             samples_name: str = "samples.tsv"):
+        name = folder.name
+        return ExpressionDataset.load(name, folder / expressions_name, folder / genes_name, folder / samples_name)
 
     def __init__(self,
                  name: str,
@@ -62,7 +93,7 @@ class ExpressionDataset:
 
 
 
-    def copy(self):
+    def copy(self): #TODO copy-meta (if exists)
         return ExpressionDataset(self.name, self.expressions.copy(),
                                  self.genes.copy(),
                                  self.samples.copy())
@@ -89,28 +120,34 @@ class ExpressionDataset:
         return [self.expressions, self.genes, self.samples]
 
     def _repr_html_(self):
+        gs = str(None) if self.genes_meta is None else str(self.genes_meta.shape)
+        ss = str(None) if self.species_meta is None else str(self.species_meta.shape)
         return f"<table border='2'>" \
                f"<caption>{self.name}<caption>" \
-               f"<tr><th>expressions</th><th>genes</th><th>species</th><th>samples</th></tr>" \
-               f"<tr><td>{str(self.expressions.shape)}</td><td>{str(self.genes.shape[0])}</td><td>{str(self.genes.shape[1])}</td><td>{str(self.samples.shape[0])}</td></tr>" \
+               f"<tr><th>expressions</th><th>genes</th><th>species</th><th>samples</th><th>Genes Metadata</th><th>Species Metadata</th></tr>" \
+               f"<tr><td>{str(self.expressions.shape)}</td><td>{str(self.genes.shape[0])}</td><td>{str(self.genes.shape[1])}</td><td>{str(self.samples.shape[0])}</td><td>{gs}</td><td>{ss}</td></tr>" \
                f"</table>"
 
     def write(self, folder: Path or str,
               expressions_name: str = "expressions.tsv",
               genes_name: str = "genes.tsv",
               samples_name: str = "samples.tsv",
+              genes_meta_name: str = "genes_meta.vsv",
+              species_meta_name: str = "species_meta.tsv",
               name_as_folder: bool = True,
-              sep= "\t"):
+              sep: str = "\t"):
         d: Path = folder if type(folder) == Path else Path(folder)
         dir: Path = d / self.name if name_as_folder else d
+        dir.mkdir(parents=True, exist_ok=True) #create if not exist
         self.expressions.to_csv(dir / expressions_name, sep=sep, index = True)
         self.genes.to_csv(dir / genes_name, sep = sep, index = True)
         self.samples.to_csv(dir / samples_name, sep=sep, index = True)
+        if self.genes_meta is not None:
+            self.genes_meta.to_csv(dir / genes_meta_name, sep=sep, index=True)
+        if self.species_meta is not None:
+            self.species_meta.to_csv(dir / species_meta_name, sep=sep, index=True)
         print(f"written {self.name} dataset content to {str(dir)}")
         return dir
-
-
-
 
 class SamplesIndexes:
     """
@@ -161,7 +198,7 @@ class GenesIndexes:
     def _repr_html_(self):
         return f"<table border='2'>" \
                f"<caption>{self.dataset.name} Genes view<caption>" \
-               f"<tr><th>Genes</th><th>Species</th>" \
+               f"<tr><th>Genes</th><th>Species</th><th>Species</th></tr>" \
                f"<tr><td>{str(self.dataset.genes.shape[0])}</td><td>{str(self.dataset.genes.shape[1])}</td></tr>" \
                f"</table>"
 

@@ -1,3 +1,5 @@
+
+
 from enum import Enum, auto
 class Normalize(Enum):
     log2 = "log2"
