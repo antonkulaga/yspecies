@@ -19,34 +19,48 @@ class ExpressionDataset:
     @staticmethod
     def load(name: str,
              expressions_path: Path,
-             genes_path: Path,
              samples_path: Path,
+             species_path: Path = None,
+             genes_path: Path = None,
              genes_meta_path: Path = None,
-             species_meta_path: Path = None,
              sep="\t",
              validate: bool = True):
         expressions =  pd.read_csv(expressions_path, sep=sep,  index_col="run")
-        genes = pd.read_csv(genes_path, sep=sep, index_col="Homo_sapiens")
         samples = pd.read_csv(samples_path, sep=sep,  index_col="run")
+        species = None if species_path is None else pd.read_csv(species_path, sep=sep, index_col="species")
+        genes = pd.read_csv(genes_path, sep=sep, index_col="Homo_sapiens")
         genes_meta = None if genes_meta_path is None else pd.read_csv(genes_meta_path, sep=sep, index_col="gene") #species	gene	symbol
-        species_meta = None if species_meta_path is None else pd.read_csv(species_meta_path, sep=sep, index_col="species")
-        return ExpressionDataset(name, expressions, genes, samples, genes_meta, species_meta, validate=validate)
+        return ExpressionDataset(name, expressions, samples, species, genes, genes_meta, validate=validate)
 
     @staticmethod
     def from_folder(folder: Path,
              expressions_name: str = "expressions.tsv",
+             samples_name: str = "samples.tsv",
+             species_name: str = "species.tsv",
              genes_name: str = "genes.tsv",
-             samples_name: str = "samples.tsv"):
+             genes_meta_name: str = "genes_meta.tsv",
+             sep="\t",
+             validate: bool = True
+             ):
         name = folder.name
-        return ExpressionDataset.load(name, folder / expressions_name, folder / genes_name, folder / samples_name)
+        genes_meta_path = folder / genes_meta_name if (folder / genes_meta_name).exists() else None
+        species_path = folder / species_name if (folder / species_name).exists() else None
+        return ExpressionDataset.load(name,
+                                      folder / expressions_name,
+                                      folder / samples_name,
+                                      species_path,
+                                      folder / genes_name,
+                                      genes_meta_path,
+                                      sep,
+                                      validate)
 
     def __init__(self,
                  name: str,
                  expressions: pd.DataFrame,
-                 genes: pd.DataFrame,
                  samples: pd.DataFrame,
+                 species: pd.DataFrame = None, #additional species info
+                 genes: pd.DataFrame = None,
                  genes_meta: pd.DataFrame = None, #for gene symbols and other useful info
-                 species_meta: pd.DataFrame = None, #additional species info
                  validate: bool = True  #validates shapes of expressions, genes and samples
                  ):
 
@@ -54,7 +68,7 @@ class ExpressionDataset:
         self.expressions = expressions
         self.genes = genes
         self.samples = samples
-        self.species_meta = species_meta
+        self.species = species
         self.genes_meta = genes_meta
         if validate:
             self.check_rep_inv()
@@ -63,7 +77,7 @@ class ExpressionDataset:
         return self.genes_meta is not None
 
     def has_species_info(self):
-        return self.species_meta is not None
+        return self.species is not None
 
     @property
     def by_genes(self):
@@ -76,6 +90,40 @@ class ExpressionDataset:
     def __len__(self):
         return self.expressions.shape[0]
 
+    def get_label(self, label: str) -> pd.DataFrame:
+        if label in self.samples.columns.to_list():
+            return self.samples[[label]]
+        elif (self.species is not None) and label in self.species.columns.to_list():
+            return self.species[[label]]
+        elif label in self.expressions.columns.to_list():
+            return self.expressions[[label]]
+        elif (self.genes_meta is not None) and label in self.genes_meta.columns.to_list():
+            return self.genes_meta[[label]]
+        else:
+            assert label in self.genes.columns.to_list(), f"cannot find label {label} anywhere!"
+
+    @property
+    def extended_expressions(self):
+        assert self.has_gene_info(), "Should have additional gene info"
+        pass
+
+
+    def extended_samples(self, samples_columns: List[str] = None, species_columns: List[str] = None):
+        '''
+        Samples that also inclode species info
+        :return:
+        '''
+        assert self.has_species_info(), "to get extended samples information there should be species info"
+        if samples_columns is None:
+            smp = self.samples.columns.to_list()
+        elif "species" in samples_columns:
+            smp = samples_columns
+        else:
+            smp = samples_columns + ["species"]
+        samples = self.samples if samples_columns is None else self.samples[smp]
+        species = self.species if species_columns is None else self.species[species_columns]
+        return samples.merge(species, left_on="species", right_index=True)
+        # return result if "species" in samples_columns else result.drop("species")
 
 
     def check_rep_inv(self):
@@ -121,7 +169,7 @@ class ExpressionDataset:
 
     def _repr_html_(self):
         gs = str(None) if self.genes_meta is None else str(self.genes_meta.shape)
-        ss = str(None) if self.species_meta is None else str(self.species_meta.shape)
+        ss = str(None) if self.species is None else str(self.species.shape)
         return f"<table border='2'>" \
                f"<caption>{self.name}<caption>" \
                f"<tr><th>expressions</th><th>genes</th><th>species</th><th>samples</th><th>Genes Metadata</th><th>Species Metadata</th></tr>" \
@@ -130,24 +178,24 @@ class ExpressionDataset:
 
     def write(self, folder: Path or str,
               expressions_name: str = "expressions.tsv",
-              genes_name: str = "genes.tsv",
               samples_name: str = "samples.tsv",
-              genes_meta_name: str = "genes_meta.vsv",
-              species_meta_name: str = "species_meta.tsv",
+              species_name: str = "species.tsv",
+              genes_name: str = "genes.tsv",
+              genes_meta_name: str = "genes_meta.tsv",
               name_as_folder: bool = True,
               sep: str = "\t"):
         d: Path = folder if type(folder) == Path else Path(folder)
-        dir: Path = d / self.name if name_as_folder else d
-        dir.mkdir(parents=True, exist_ok=True) #create if not exist
-        self.expressions.to_csv(dir / expressions_name, sep=sep, index = True)
-        self.genes.to_csv(dir / genes_name, sep = sep, index = True)
-        self.samples.to_csv(dir / samples_name, sep=sep, index = True)
+        folder: Path = d / self.name if name_as_folder else d
+        folder.mkdir(parents=True, exist_ok=True) #create if not exist
+        self.expressions.to_csv(folder / expressions_name, sep=sep, index = True)
+        self.genes.to_csv(folder / genes_name, sep = sep, index = True)
+        self.samples.to_csv(folder / samples_name, sep=sep, index = True)
         if self.genes_meta is not None:
-            self.genes_meta.to_csv(dir / genes_meta_name, sep=sep, index=True)
-        if self.species_meta is not None:
-            self.species_meta.to_csv(dir / species_meta_name, sep=sep, index=True)
-        print(f"written {self.name} dataset content to {str(dir)}")
-        return dir
+            self.genes_meta.to_csv(folder / genes_meta_name, sep=sep, index=True)
+        if self.species is not None:
+            self.species.to_csv(folder / species_name, sep=sep, index=True)
+        print(f"written {self.name} dataset content to {str(folder)}")
+        return folder
 
 class SamplesIndexes:
     """

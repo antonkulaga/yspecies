@@ -17,7 +17,7 @@ def tab(headers: List[str], body: List[List[str]]):
 def tab(table: List[List[str]]):
     display(HTML(tabulate.tabulate(table, tablefmt='html')))
 
-def show_wide(df: pd.DataFrame, cols: int, rows: int = 3) -> pd.DataFrame:
+def show(df: pd.DataFrame, cols: int, rows: int = 3) -> pd.DataFrame:
     return df[df.columns[0:cols]].head(rows)
 
 def load_table(path: Path, index: str = None, dtype: str = None)->pd.DataFrame:
