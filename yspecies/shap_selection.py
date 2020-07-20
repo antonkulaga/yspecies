@@ -1,92 +1,120 @@
-from yspecies import *
-from yspecies.enums import *
-from yspecies.dataset import *
-from yspecies.misc import *
-from yspecies.workflow import *
+from dataclasses import *
+from typing import *
 
+import lightgbm as lgb
 import numpy as np
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-
 import pandas as pd
 import shap
-from pprint import pprint
-import random
-import numpy as np
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
-import lightgbm as lgb
 from scipy.stats import kendalltau
-from sklearn.utils import resample
-from sklearn.model_selection import train_test_split, KFold
-from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, accuracy_score, recall_score, precision_score, f1_score
 
-from typing import *
-from dataclasses import *
+from yspecies.preprocessing import *
+
 
 @dataclass
-class SelectedFeatures:
-
-    samples: List[str] = None
-    species: List[str] = None
-    genes: List[str] = None #if None = takes all genes
-    to_predict: str = "lifespan"
+class FeatureResults:
+    weighted_features: List
+    stable_shap_values: List
 
 @dataclass
-class ExpressionPartitions:
+class ModelFactory:
 
-    features: SelectedFeatures
-    X: pd.DataFrame
-    Y: pd.DataFrame
-    x_partitions: pd.DataFrame
-    y_partitions: pd.DataFrame
+    default_parameters: Dict = field(default_factory = lambda : {
+        'boosting_type': 'gbdt',
+        'objective': 'regression',
+        'metric': {'l2', 'l1'},
+        'max_leaves': 20,
+        'max_depth': 3,
+        'learning_rate': 0.07,
+        'feature_fraction': 0.8,
+        'bagging_fraction': 1,
+        'min_data_in_leaf': 6,
+        'lambda_l1': 0.9,
+        'lambda_l2': 0.9,
+        "verbose": -1
+    })
+
+
+    def regression_model(self, X_train, X_test, y_train, y_test, categorical=None, parameters: dict = None): #, categorical):
+        categorical = categorical if isinstance(categorical, List) or categorical is None else [categorical]
+        parameters = self.default_parameters if parameters is None else parameters
+        lgb_train = lgb.Dataset(X_train, y_train, categorical_feature=categorical)
+        lgb_eval = lgb.Dataset(X_test, y_test, reference=lgb_train)
+        evals_result = {}
+        gbm = lgb.train(parameters,
+                        lgb_train,
+                        num_boost_round=500,
+                        valid_sets=lgb_eval,
+                        evals_result=evals_result,
+                        verbose_eval=1000,
+                        early_stopping_rounds=7)
+        return gbm
 
 @dataclass
-class DataParitioner:
+class FeatureAnalyzer(TransformerMixin):
+    '''
+    Class that gets partioner and model factory and selects best features.
+    TODO: rewrite everything to Pipeline
+    '''
 
-    features: SelectedFeatures
+    model_factory: ModelFactory
+    bootstraps: int = 5
 
-    def partition(self, data: ExpressionDataset, k: int):
-        '''
-        
-        :param data: ExpressionDataset
-        :param k: number of k-folds in sorted stratification
-        :return: 
-        '''
-        samples = data.extended_samples(self.features.samples, self.features.species)
-        exp = data.expressions if self.features.genes is None else data.expressions[self.features.genes]
-        X: pd.DataFrame = samples.join(exp)
-        y: pd.DataFrame = data.get_label(self.features.to_predict)
-        return self.sorted_stratification(X, y, k)
+    def fit(self, X, y=None) -> 'DataExtractor':
+        return self
 
-    def sorted_stratification(self, X: pd.DataFrame, Y: pd.DataFrame, k: int):
-        X['target'] = Y
-        X = X.sort_values(by=['target'])
-        partition_indexes = [[] for i in range(k)]
-        i = 0
-        index_of_sample = 0
+    def transform(self, partitions: ExpressionPartitions) -> FeatureResults:
+        weight_of_features = []
+        shap_values_out_of_fold = [[0 for i in range(len(partitions.X.values[0]))] for z in range(len(partitions.X))]
+        #interaction_values_out_of_fold = [[[0 for i in range(len(X.values[0]))] for i in range(len(X.values[0]))] for z in range(len(X))]
+        out_of_folds_metrics = [0, 0, 0]
 
-        while i < (int(len(Y)/k)):
-            for j in range(k):
-                partition_indexes[j].append((i*k)+j)
-                index_of_sample = (i*k)+j
-            i += 1
+        for i in range(self.bootstraps):
 
-        index_of_sample += 1
-        i = 0
-        while index_of_sample < len(Y):
-            partition_indexes[i].append(index_of_sample)
-            index_of_sample += 1
-            i+=1
+            X_test = partitions.x_partitions[i]
+            y_test = partitions.y_partitions[i]
 
-        X_features = X.drop(['target'], axis=1)
-        Y = X['target'].values
-        X = X.drop(['target'], axis=1)
+            X_train = pd.concat(partitions.x_partitions[:i] + partitions.x_partitions[i+1:])
+            y_train = np.concatenate(partitions.y_partitions[:i] + partitions.y_partitions[i+1:], axis=0)
 
-        partition_Xs = []
-        partition_Ys = []
-        for pindex in partition_indexes:
-            partition_Xs.append(X_features.iloc[pindex])
-            partition_Ys.append(Y[pindex])
+            # get trained model and record accuracy metrics
+            model = self.model_factory.regression_model(X_train, X_test, y_train, y_test)#, index_of_categorical)
+            #out_of_folds_metrics = add_metrics(out_of_folds_metrics, model, X_test, y_test)
 
-        return ExpressionPartitions(self.features, X, Y, partition_Xs, partition_Ys)
+            weight_of_features.append(model.feature_importance(importance_type='gain'))
+
+            explainer = shap.TreeExplainer(model)
+            shap_values = explainer.shap_values(partitions.X)
+            #interaction_values = explainer.shap_interaction_values(X)
+            shap_values_out_of_fold = np.add(shap_values_out_of_fold, shap_values)
+            #interaction_values_out_of_fold = np.add(interaction_values_out_of_fold, interaction_values)
+
+        # print average metrics results
+        #print('Accuracy of predicting ' + label_to_predict, np.divide(out_of_folds_metrics, self.bootstraps))
+
+        # calculate shap values out of fold
+        shap_values_out_of_fold = shap_values_out_of_fold / self.bootstraps
+        shap_values_transposed = shap_values_out_of_fold.T
+        X_transposed = partitions.X.T.values
+
+        # get features that have stable weight across bootstraps
+        output_features_by_weight = []
+        for i, index_of_col in enumerate(weight_of_features[0]):
+            cols = []
+            for sample in weight_of_features:
+                cols.append(sample[i])
+            non_zero_cols = 0
+            for col in cols:
+                if col != 0:
+                    non_zero_cols += 1
+            if non_zero_cols == self.bootstraps:
+                if 'ENSG' in partitions.X.columns[i]:
+                    output_features_by_weight.append({
+                        'ids': partitions.X.columns[i],
+                        'gain_score_to_'+partitions.label_to_predict: np.mean(cols),
+                        'name': partitions.X.columns[i], #ensemble_data.gene_name_of_gene_id(X.columns[i]),
+                        'kendall_tau_to_'+partitions.label_to_predict: kendalltau(shap_values_transposed[i], X_transposed[i], nan_policy='omit')[0]
+                    })
+
+        #output_features_by_weight = sorted(output_features_by_weight, key=lambda k: k['score'], reverse=True)
+
+        return FeatureResults(output_features_by_weight, shap_values_out_of_fold)

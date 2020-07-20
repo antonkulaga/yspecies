@@ -122,7 +122,8 @@ class ExpressionDataset:
             smp = samples_columns + ["species"]
         samples = self.samples if samples_columns is None else self.samples[smp]
         species = self.species if species_columns is None else self.species[species_columns]
-        return samples.merge(species, left_on="species", right_index=True)
+        merged = samples.merge(species, left_on="species", right_index=True)
+        return merged if "species" in samples_columns else merged.drop("species")
         # return result if "species" in samples_columns else result.drop("species")
 
 
