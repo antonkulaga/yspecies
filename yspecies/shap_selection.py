@@ -6,14 +6,42 @@ import numpy as np
 import pandas as pd
 import shap
 from scipy.stats import kendalltau
+from sklearn.metrics import *
 
 from yspecies.preprocessing import *
 
+@dataclass
+class Metrics:
+
+    @staticmethod
+    def calculate(prediction, ground_truth) -> 'Metrics':
+        return Metrics(
+            r2_score(ground_truth, prediction),
+            mean_squared_error(ground_truth, prediction),
+            mean_absolute_error(ground_truth, prediction))
+    '''
+    Class to store metrics
+    '''
+    R2: float
+    MSE: float
+    MAE: float
+
+    @property
+    def to_numpy(self):
+        return np.array([self.R2, self.MSE, self.MAE])
 
 @dataclass
 class FeatureResults:
-    weighted_features: List
+    weights: pd.DataFrame
     stable_shap_values: List
+    metrics: pd.DataFrame
+
+    def _repr_html_(self):
+        return f"<table border='2'>" \
+               f"<caption>Feature selection results<caption>" \
+               f"<tr><th>weights</th><th>SHAP values</th><th>Metrics</th></tr>" \
+               f"<tr><td>{self.weights._repr_html_()}</th><td>{self.stable_shap_values}</th><th>{self.metrics._repr_html_()}</th></tr>" \
+               f"</table>"
 
 @dataclass
 class ModelFactory:
@@ -62,23 +90,26 @@ class FeatureAnalyzer(TransformerMixin):
     def fit(self, X, y=None) -> 'DataExtractor':
         return self
 
-    def transform(self, partitions: ExpressionPartitions) -> FeatureResults:
+    def compute_folds(self, partitions: ExpressionPartitions) -> Tuple[List, pd.DataFrame, pd.DataFrame]:
+        '''
+        Subfunction to compute weight_of_features, shap_values_out_of_fold, metrics_out_of_fold
+        :param partitions:
+        :return:
+        '''
         weight_of_features = []
         shap_values_out_of_fold = [[0 for i in range(len(partitions.X.values[0]))] for z in range(len(partitions.X))]
         #interaction_values_out_of_fold = [[[0 for i in range(len(X.values[0]))] for i in range(len(X.values[0]))] for z in range(len(X))]
-        out_of_folds_metrics = [0, 0, 0]
+        metrics = pd.DataFrame(np.zeros([self.bootstraps,3]), columns=["R^2", "MSE", "MAE"])
+        #.sum(axis=0)
 
         for i in range(self.bootstraps):
 
-            X_test = partitions.x_partitions[i]
-            y_test = partitions.y_partitions[i]
-
-            X_train = pd.concat(partitions.x_partitions[:i] + partitions.x_partitions[i+1:])
-            y_train = np.concatenate(partitions.y_partitions[:i] + partitions.y_partitions[i+1:], axis=0)
+            X_train, X_test, y_train, y_test = partitions.split_fold(i)
 
             # get trained model and record accuracy metrics
             model = self.model_factory.regression_model(X_train, X_test, y_train, y_test)#, index_of_categorical)
-            #out_of_folds_metrics = add_metrics(out_of_folds_metrics, model, X_test, y_test)
+            fold_predictions = model.predict(X_test, num_iteration=model.best_iteration)
+            metrics.iloc[i] = Metrics.calculate(y_test, fold_predictions).to_numpy
 
             weight_of_features.append(model.feature_importance(importance_type='gain'))
 
@@ -87,13 +118,16 @@ class FeatureAnalyzer(TransformerMixin):
             #interaction_values = explainer.shap_interaction_values(X)
             shap_values_out_of_fold = np.add(shap_values_out_of_fold, shap_values)
             #interaction_values_out_of_fold = np.add(interaction_values_out_of_fold, interaction_values)
+        return weight_of_features, shap_values_out_of_fold, metrics
 
-        # print average metrics results
-        #print('Accuracy of predicting ' + label_to_predict, np.divide(out_of_folds_metrics, self.bootstraps))
+    def transform(self, partitions: ExpressionPartitions) -> FeatureResults:
 
+        weight_of_features, shap_values_out_of_fold, metrics = self.compute_folds(partitions)
         # calculate shap values out of fold
-        shap_values_out_of_fold = shap_values_out_of_fold / self.bootstraps
-        shap_values_transposed = shap_values_out_of_fold.T
+        #mean_shap_values_out_of_fold = shap_values_out_of_fold / self.bootstraps
+        mean_metrics = metrics.mean(axis=0)
+        print("MEAN metrics = "+str(mean_metrics))
+        shap_values_transposed = mean_shap_values_out_of_fold.T
         X_transposed = partitions.X.T.values
 
         # get features that have stable weight across bootstraps
@@ -110,11 +144,11 @@ class FeatureAnalyzer(TransformerMixin):
                 if 'ENSG' in partitions.X.columns[i]:
                     output_features_by_weight.append({
                         'ids': partitions.X.columns[i],
-                        'gain_score_to_'+partitions.label_to_predict: np.mean(cols),
+                        'gain_score_to_'+partitions.features.to_predict: np.mean(cols),
                         'name': partitions.X.columns[i], #ensemble_data.gene_name_of_gene_id(X.columns[i]),
-                        'kendall_tau_to_'+partitions.label_to_predict: kendalltau(shap_values_transposed[i], X_transposed[i], nan_policy='omit')[0]
+                        'kendall_tau_to_'+partitions.features.to_predict: kendalltau(shap_values_transposed[i], X_transposed[i], nan_policy='omit')[0]
                     })
 
         #output_features_by_weight = sorted(output_features_by_weight, key=lambda k: k['score'], reverse=True)
-
-        return FeatureResults(output_features_by_weight, shap_values_out_of_fold)
+        weights = pd.DataFrame(output_features_by_weight)
+        return FeatureResults(weights, shap_values_out_of_fold, metrics)

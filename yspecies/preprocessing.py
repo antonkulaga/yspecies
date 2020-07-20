@@ -1,31 +1,11 @@
-from sklearn.base import TransformerMixin, BaseEstimator
+from dataclasses import *
+from typing import *
+import numpy as np
+import pandas as pd
+from sklearn.base import TransformerMixin
 
-from yspecies import *
-from yspecies.enums import *
 from yspecies.dataset import *
 from yspecies.misc import *
-from yspecies.workflow import *
-
-import numpy as np
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-import pandas as pd
-import shap
-from pprint import pprint
-import random
-import numpy as np
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
-import lightgbm as lgb
-from scipy.stats import kendalltau
-from sklearn.utils import resample
-from sklearn.model_selection import train_test_split, KFold, StratifiedKFold
-from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error, accuracy_score, recall_score, precision_score, f1_score
-from collections import namedtuple
-from typing import *
-from dataclasses import *
-
 
 
 @dataclass
@@ -36,14 +16,17 @@ class SelectedFeatures:
     genes: List[str] = None #if None = takes all genes
     to_predict: str = "lifespan"
 
+
     @property
     def y_name(self):
         return f"Y_{self.to_predict}"
 
     content = None #content feature to
+    genes_meta: pd.DataFrame = None #metada for genes
 
-    def with_content(self, content) -> 'SelectedFeatures':
+    def with_content(self, content, genes_meta: pd.DataFrame = None) -> 'SelectedFeatures':
         self.content = content
+        self.genes_meta = genes_meta
         return self
 
 
@@ -78,7 +61,7 @@ class DataExtractor(TransformerMixin):
         exp = data.expressions if self.features.genes is None else data.expressions[self.features.genes]
         X: pd.DataFrame = samples.join(exp)
         content = data.get_label(self.features.to_predict).join(X).rename(columns={self.features.to_predict: self.features.y_name})
-        return self.features.with_content(content)
+        return self.features.with_content(content, data.genes_meta)
 
 
 
@@ -92,7 +75,22 @@ class ExpressionPartitions:
     y_partitions: List
     folds: int # number of paritions
 
-    def _repr_html_(self):
+    def split_fold(self, i: int):
+        X_train, y_train = self.fold_train(i)
+        X_test = self.x_partitions[i]
+        y_test = self.y_partitions[i]
+        return X_train, X_test, y_train, y_test
+
+    def fold_train(self, i: int):
+        '''
+        prepares train data for the fold
+        :param i: number of parition
+        :return: tuple with X and Y
+        '''
+        return pd.concat(self.x_partitions[:i] + self.x_partitions[i+1:]), np.concatenate(self.y_partitions[:i] + self.y_partitions[i+1:], axis=0)
+
+
+def _repr_html_(self):
         return f"<table>" \
                f"<tr><th>partitions_X</th><th>partitions_Y</th></tr>" \
                f"<tr><td align='left'>{str([l.shape for l in self.x_partitions])}</td><td align='left'>{str([l.shape for l in self.y_partitions])}</td></tr>" \

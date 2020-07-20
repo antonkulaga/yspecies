@@ -5,12 +5,20 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - yspecies=0.1.5
+  - python=3.8
   - jupyterlab>=2.2.0
-  - python>=3.8
+  - pathlib>=1.0.1
   - dvc>=1.1.11
   - papermill>=2.1.2
   - anaconda-client>=1.7.2
   - conda-build>=3.19.2
+  - mamba>=0.4.2
+  - yspecies=0.1.6
+  - scikit-learn>=0.23.1
+  - seaborn>=0.10.1
+  - shap>=0.35.0
+  - lightgbm>=2.3.1
+  - statsmodels>=0.11.1
+
 prefix: /data/miniconda3/envs/species
 
