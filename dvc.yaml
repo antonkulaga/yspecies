@@ -18,7 +18,17 @@ stages:
       - data/output/counts/tissue_sample_count.tsv
       - data/output/counts/species_tissue_sample_count.tsv
       - data/output/notebooks/select_samples.ipynb
-  
+  shap_selection:
+    cmd: papermill -f parameters/shap_selection.yaml  --progress-bar --report-mode
+      notebooks/shap_selection.ipynb data/output/notebooks/shap_selection.ipynb
+    deps:
+        - data/interim/selected/species.tsv
+        - data/interim/selected/samples.tsv
+        - data/interim/selected/genes.tsv
+        - data/interim/selected/expressions.tsv
+        - data/interim/selected/genes_meta.tsv
+    outs:
+        - data/output/notebooks/shap_selection.ipynb
   results_intersections:
     cmd: papermill -f parameters/results_intersections.yaml  --progress-bar --report-mode
       notebooks/results_intersections.ipynb data/output/notebooks/results_intersections.ipynb

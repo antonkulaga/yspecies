@@ -40,7 +40,7 @@ select_samples:
   - path: data/input/species.tsv
     md5: cdf6379f1d78780afc6f650b10636494
   - path: notebooks/select_samples.ipynb
-    md5: 183879e0de15479f206d4b87c8d9ab53
+    md5: a3970b35e06f268c68b80bb723195629
   - path: parameters/select_samples.yaml
     md5: 77022411214eec3ce26ca1e7f6ee0303
   outs:
@@ -49,7 +49,7 @@ select_samples:
   - path: data/interim/selected/genes.tsv
     md5: 3493e854da19b3e839357a5c3ec70f27
   - path: data/interim/selected/genes_meta.tsv
-    md5: 79d96bb94e24b3675f4d2e56b4721470
+    md5: 3e5ad1fa8633519306facc08d1f7dd18
   - path: data/interim/selected/samples.tsv
     md5: f3a11a4ad6550a7f356bf51e7a4e183b
   - path: data/interim/selected/species.tsv
@@ -61,7 +61,7 @@ select_samples:
   - path: data/output/counts/tissue_sample_count.tsv
     md5: 95d7d50886117aae30a8ee8c335f5076
   - path: data/output/notebooks/select_samples.ipynb
-    md5: bc9568961961e6fe334436d0352115d9
+    md5: fa1bb6f61d8abd61a92105958bdad01b
 results_intersections:
   cmd: papermill -f parameters/results_intersections.yaml  --progress-bar --report-mode
     notebooks/results_intersections.ipynb data/output/notebooks/results_intersections.ipynb
@@ -87,3 +87,20 @@ results_intersections:
     md5: 440391dfccd04e58897f3bb1c898b74b
   - path: data/output/notebooks/results_intersections.ipynb
     md5: 4aa03ee3831120e7a7d76ed0351e9a46
+shap_selection:
+  cmd: papermill -f parameters/shap_selection.yaml  --progress-bar --report-mode notebooks/shap_selection.ipynb
+    data/output/notebooks/shap_selection.ipynb
+  deps:
+  - path: data/interim/selected/expressions.tsv
+    md5: da15a8f74264f081f6fcc028f8808861
+  - path: data/interim/selected/genes.tsv
+    md5: 3493e854da19b3e839357a5c3ec70f27
+  - path: data/interim/selected/genes_meta.tsv
+    md5: 3e5ad1fa8633519306facc08d1f7dd18
+  - path: data/interim/selected/samples.tsv
+    md5: f3a11a4ad6550a7f356bf51e7a4e183b
+  - path: data/interim/selected/species.tsv
+    md5: 74a64f77b443ed7b6e9b44240953ec7a
+  outs:
+  - path: data/output/notebooks/shap_selection.ipynb
+    md5: cdaec7fcd8c3b2818b6422cedd7b0797

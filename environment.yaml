@@ -13,7 +13,7 @@ dependencies:
   - anaconda-client>=1.7.2
   - conda-build>=3.19.2
   - mamba>=0.4.2
-  - yspecies=0.1.6
+  - yspecies=0.1.7
   - scikit-learn>=0.23.1
   - seaborn>=0.10.1
   - shap>=0.35.0

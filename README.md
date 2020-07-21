@@ -67,3 +67,13 @@ e.by_samples.filter(lambda s: s["tissue"]=="Blood")
 ```
 
 The class is also Jupyter-friendly with _repr_html_() method implemented
+
+## Running notebooks manually ##
+
+You can run notebooks manually by:
+```bash
+jupyter lab notebooks
+```
+And then running the notebook of our choice. 
+However, keep in mind that notebooks depend on each other.
+In particular, select_samples notebook generates the data for all others.
