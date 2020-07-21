@@ -1,14 +1,10 @@
-from dataclasses import *
-from typing import *
-
 import lightgbm as lgb
-import numpy as np
-import pandas as pd
 import shap
 from scipy.stats import kendalltau
 from sklearn.metrics import *
 
 from yspecies.partition import *
+
 
 @dataclass
 class Metrics:
@@ -33,20 +29,20 @@ class Metrics:
 @dataclass
 class FeatureResults:
     weights: pd.DataFrame
-    stable_shap_values: List
+    stable_shap_values: np.ndarray
     metrics: pd.DataFrame
 
     def _repr_html_(self):
         return f"<table border='2'>" \
                f"<caption>Feature selection results<caption>" \
                f"<tr><th>weights</th><th>SHAP values</th><th>Metrics</th></tr>" \
-               f"<tr><td>{self.weights._repr_html_()}</th><td>{self.stable_shap_values}</th><th>{self.metrics._repr_html_()}</th></tr>" \
+               f"<tr><td>{self.weights._repr_html_()}</th><td>{self.stable_shap_values.shape}</th><th>{self.metrics._repr_html_()}</th></tr>" \
                f"</table>"
 
 @dataclass
 class ModelFactory:
 
-    default_parameters: Dict = field(default_factory = lambda : {
+    parameters: Dict = field(default_factory = lambda : {
         'boosting_type': 'gbdt',
         'objective': 'regression',
         'metric': {'l2', 'l1'},
@@ -62,9 +58,19 @@ class ModelFactory:
     })
 
 
-    def regression_model(self, X_train, X_test, y_train, y_test, categorical=None, parameters: dict = None): #, categorical):
+    def regression_model(self, X_train, X_test, y_train, y_test, categorical=None, params: dict = None): #, categorical):
+        '''
+        trains a regression model
+        :param X_train:
+        :param X_test:
+        :param y_train:
+        :param y_test:
+        :param categorical:
+        :param params:
+        :return:
+        '''
         categorical = categorical if isinstance(categorical, List) or categorical is None else [categorical]
-        parameters = self.default_parameters if parameters is None else parameters
+        parameters = self.parameters if params is None else params
         lgb_train = lgb.Dataset(X_train, y_train, categorical_feature=categorical)
         lgb_eval = lgb.Dataset(X_test, y_test, reference=lgb_train)
         evals_result = {}
@@ -78,7 +84,7 @@ class ModelFactory:
         return gbm
 
 @dataclass
-class FeatureAnalyzer(TransformerMixin):
+class ShapSelector(TransformerMixin):
     '''
     Class that gets partioner and model factory and selects best features.
     TODO: rewrite everything to Pipeline
@@ -86,8 +92,21 @@ class FeatureAnalyzer(TransformerMixin):
 
     model_factory: ModelFactory
     bootstraps: int = 5
+    models: List = field(default_factory=lambda: [])
 
-    def fit(self, X, y=None) -> 'DataExtractor':
+    def fit(self, partitions: ExpressionPartitions, y=None) -> 'DataExtractor':
+        '''
+        trains models on fig stage
+        :param partitions:
+        :param y:
+        :return:
+        '''
+        self.models = []
+        for i in range(self.bootstraps):
+            X_train, X_test, y_train, y_test = partitions.split_fold(i)
+            # get trained model and record accuracy metrics
+            model = self.model_factory.regression_model(X_train, X_test, y_train, y_test)#, index_of_categorical)
+            self.models.append(model)
         return self
 
     def compute_folds(self, partitions: ExpressionPartitions) -> Tuple[List, pd.DataFrame, pd.DataFrame]:
@@ -102,13 +121,14 @@ class FeatureAnalyzer(TransformerMixin):
         #interaction_values_out_of_fold = [[[0 for i in range(len(X.values[0]))] for i in range(len(X.values[0]))] for z in range(len(X))]
         metrics = pd.DataFrame(np.zeros([self.bootstraps,3]), columns=["R^2", "MSE", "MAE"])
         #.sum(axis=0)
-
+        assert len(self.models) == self.bootstraps, "for each bootstrap there should be a model"
         for i in range(self.bootstraps):
 
-            X_train, X_test, y_train, y_test = partitions.split_fold(i)
+            X_test = partitions.x_partitions[i]
+            y_test = partitions.y_partitions[i]
 
             # get trained model and record accuracy metrics
-            model = self.model_factory.regression_model(X_train, X_test, y_train, y_test)#, index_of_categorical)
+            model = self.models[i]
             fold_predictions = model.predict(X_test, num_iteration=model.best_iteration)
             metrics.iloc[i] = Metrics.calculate(y_test, fold_predictions).to_numpy
 
