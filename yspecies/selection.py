@@ -8,7 +8,7 @@ import shap
 from scipy.stats import kendalltau
 from sklearn.metrics import *
 
-from yspecies.preprocessing import *
+from yspecies.partition import *
 
 @dataclass
 class Metrics:
@@ -98,6 +98,7 @@ class FeatureAnalyzer(TransformerMixin):
         '''
         weight_of_features = []
         shap_values_out_of_fold = [[0 for i in range(len(partitions.X.values[0]))] for z in range(len(partitions.X))]
+
         #interaction_values_out_of_fold = [[[0 for i in range(len(X.values[0]))] for i in range(len(X.values[0]))] for z in range(len(X))]
         metrics = pd.DataFrame(np.zeros([self.bootstraps,3]), columns=["R^2", "MSE", "MAE"])
         #.sum(axis=0)
@@ -115,6 +116,7 @@ class FeatureAnalyzer(TransformerMixin):
 
             explainer = shap.TreeExplainer(model)
             shap_values = explainer.shap_values(partitions.X)
+
             #interaction_values = explainer.shap_interaction_values(X)
             shap_values_out_of_fold = np.add(shap_values_out_of_fold, shap_values)
             #interaction_values_out_of_fold = np.add(interaction_values_out_of_fold, interaction_values)
@@ -124,11 +126,15 @@ class FeatureAnalyzer(TransformerMixin):
 
         weight_of_features, shap_values_out_of_fold, metrics = self.compute_folds(partitions)
         # calculate shap values out of fold
-        #mean_shap_values_out_of_fold = shap_values_out_of_fold / self.bootstraps
+        mean_shap_values_out_of_fold = shap_values_out_of_fold / float(self.bootstraps)
         mean_metrics = metrics.mean(axis=0)
         print("MEAN metrics = "+str(mean_metrics))
         shap_values_transposed = mean_shap_values_out_of_fold.T
+        shap_values_sums = shap_values_transposed.sum(axis=1)
         X_transposed = partitions.X.T.values
+
+        gain_score_name = 'gain_score_to_'+partitions.features.to_predict
+        kendal_tau_name = 'kendall_tau_to_'+partitions.features.to_predict
 
         # get features that have stable weight across bootstraps
         output_features_by_weight = []
@@ -141,14 +147,18 @@ class FeatureAnalyzer(TransformerMixin):
                 if col != 0:
                     non_zero_cols += 1
             if non_zero_cols == self.bootstraps:
-                if 'ENSG' in partitions.X.columns[i]:
+                if 'ENSG' in partitions.X.columns[i]: #TODO: change from ENSG checkup
                     output_features_by_weight.append({
-                        'ids': partitions.X.columns[i],
-                        'gain_score_to_'+partitions.features.to_predict: np.mean(cols),
-                        'name': partitions.X.columns[i], #ensemble_data.gene_name_of_gene_id(X.columns[i]),
-                        'kendall_tau_to_'+partitions.features.to_predict: kendalltau(shap_values_transposed[i], X_transposed[i], nan_policy='omit')[0]
+                        'ensembl_id': partitions.X.columns[i],
+                        gain_score_name: np.mean(cols),
+                        "shap": shap_values_sums[i],
+                        #'name': partitions.X.columns[i], #ensemble_data.gene_name_of_gene_id(X.columns[i]),
+                        kendal_tau_name: kendalltau(shap_values_transposed[i], X_transposed[i], nan_policy='omit')[0]
                     })
-
-        #output_features_by_weight = sorted(output_features_by_weight, key=lambda k: k['score'], reverse=True)
-        weights = pd.DataFrame(output_features_by_weight)
-        return FeatureResults(weights, shap_values_out_of_fold, metrics)
+        selected_features = pd.DataFrame(output_features_by_weight)
+        selected_features = selected_features.set_index("ensembl_id")
+        if isinstance(partitions.features.genes_meta, pd.DataFrame):
+            selected_features = partitions.features.genes_meta.drop(columns=["species"])\
+                .join(selected_features, how="inner") \
+                .sort_values(by=["gain_score_to_lifespan"], ascending=False)
+        return FeatureResults(selected_features, shap_values_out_of_fold, metrics)

@@ -29,7 +29,7 @@ class ExpressionDataset:
         samples = pd.read_csv(samples_path, sep=sep,  index_col="run")
         species = None if species_path is None else pd.read_csv(species_path, sep=sep, index_col="species")
         genes = pd.read_csv(genes_path, sep=sep, index_col="Homo_sapiens")
-        genes_meta = None if genes_meta_path is None else pd.read_csv(genes_meta_path, sep=sep, index_col="gene") #species	gene	symbol
+        genes_meta = None if genes_meta_path is None else pd.read_csv(genes_meta_path, sep=sep, index_col="ensembl_id") #species	gene	symbol
         return ExpressionDataset(name, expressions, samples, species, genes, genes_meta, validate=validate)
 
     @staticmethod
@@ -122,8 +122,8 @@ class ExpressionDataset:
             smp = samples_columns + ["species"]
         samples = self.samples if samples_columns is None else self.samples[smp]
         species = self.species if species_columns is None else self.species[species_columns]
-        merged = samples.merge(species, left_on="species", right_index=True)
-        return merged if "species" in samples_columns else merged.drop(columns = ["species"])
+        merged = samples.merge(species, how="inner", left_on="species", right_index=True)
+        return merged #if (samples_columns is not None and "species" in samples_columns) else merged.drop(columns = ["species"])
 
 
     def check_rep_inv(self):
