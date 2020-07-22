@@ -7,10 +7,10 @@ from sklearn.base import TransformerMixin
 
 from yspecies.dataset import *
 from yspecies.utils import *
-
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 
 @dataclass
-class SelectedFeatures:
+class FeatureSelection:
     '''
     Class that contains parameters for feature selection
     '''
@@ -38,32 +38,35 @@ class SelectedFeatures:
     content = None #content feature to
     genes_meta: pd.DataFrame = None #metada for genes
 
-    def with_content(self, content: pd.DataFrame, genes_meta: pd.DataFrame = None) -> 'SelectedFeatures':
-        content.columns
-        self.content = content
+    #def with_content(self, content: pd.DataFrame, genes_meta: pd.DataFrame = None) -> 'SelectedFeatures':
+    #    content.columns
+    #    self.content = content
+    #    self.genes_meta = genes_meta
+    #    return self
+
+
+
+@dataclass
+class EncodedFeatures:
+
+    def __init__(self, features: FeatureSelection, df: pd.DataFrame, genes_meta: pd.DataFrame = None):
         self.genes_meta = genes_meta
-        return self
-
-
-    def _wrap_html_(self, content):
-        if content is None:
-            return ""
-        elif isinstance(content, pd.DataFrame):
-            df = content if self.to_predict not in content.columns else content.rename(columns={self.to_predict: self.y_name})
-            if(df.shape[1]>100):
-                return show(df, 10, 10)._repr_html_()
-            else:
-                return df.head(10)._repr_html_()
+        self.features = features
+        self.content = df
+        if len(features.categorical) < 1:
+            self.encoders = []
         else:
-            return content._repr_html_()
+            self.encoders: Dict[str, LabelEncoder] = {f: LabelEncoder() for f in features.categorical}
+            for col, encoder in self.encoders.items():
+                col_encoded = col+"encoded"
+                self.content[col_encoded] = encoder.fit_transform(df[col].values)
 
     def _repr_html_(self):
         return f"<table border='2'>" \
                f"<caption> Selected feature columns <caption>" \
                f"<tr><th>Samples metadata</th><th>Species metadata</th><th>Genes</th><th>Predict label</th></tr>" \
                f"<tr><td>{str(self.samples)}</td><td>{str(self.species)}</td><td>{'all' if self.genes is None else str(self.genes)}</td><td>{str(self.to_predict)}</td></tr>" \
-               f"</table>{self._wrap_html_(self.content)}"
-
+               f"</table>{show(self.content, 10, 10)._repr_html_()}"
 
 @dataclass
 class DataExtractor(TransformerMixin):
@@ -71,7 +74,7 @@ class DataExtractor(TransformerMixin):
     Workflow stage which extracts Data from ExpressionDataset
     '''
 
-    features: SelectedFeatures
+    features: FeatureSelection
 
     def fit(self, X, y=None) -> 'DataExtractor':
         return self
@@ -81,8 +84,7 @@ class DataExtractor(TransformerMixin):
         exp = data.expressions if self.features.genes is None else data.expressions[self.features.genes]
         X: pd.ataFrame = samples.join(exp, how="inner")
         content = data.get_label(self.features.to_predict).join(X)
-        return self.features.with_content(content, data.genes_meta)
-
+        return EncodedFeatures(self.features, content, data.genes_meta)
 
 
 @dataclass
@@ -91,13 +93,17 @@ class ExpressionPartitions:
     Class is used as results of SortedStratification
     '''
 
-    features: SelectedFeatures
+    data: EncodedFeatures
     X: pd.DataFrame
     Y: pd.DataFrame
     x_partitions: List
     y_partitions: List
     species_partitions: List
     folds: int # number of paritions
+
+    @property
+    def features(self):
+        return self.data.features
 
     def split_fold(self, i: int):
         X_train, y_train = self.fold_train(i)
@@ -133,7 +139,7 @@ class DataPartitioner(TransformerMixin):
     def fit(self, X, y=None) -> 'DataExtractor':
         return self
 
-    def transform(self, selected: SelectedFeatures) -> ExpressionPartitions:
+    def transform(self, selected: EncodedFeatures) -> ExpressionPartitions:
         '''
 
         :param data: ExpressionDataset
@@ -141,9 +147,9 @@ class DataPartitioner(TransformerMixin):
         :return: partitions
         '''
         assert isinstance(selected.content, pd.DataFrame), "Should contain extracted Pandas DataFrame with X and Y"
-        return self.sorted_stratification(selected.content, selected, self.folds)
+        return self.sorted_stratification(selected, self.folds)
 
-    def sorted_stratification(self, df: pd.DataFrame, features: SelectedFeatures, k: int) -> ExpressionPartitions:
+    def sorted_stratification(self, encodedFeatures: EncodedFeatures, k: int) -> ExpressionPartitions:
         '''
 
         :param df:
@@ -152,7 +158,9 @@ class DataPartitioner(TransformerMixin):
         :param species_validation: number of species to leave only in validation set
         :return:
         '''
-        X = df.sort_values(by=[features.to_predict])
+        df = encodedFeatures.content
+        features = encodedFeatures.features
+        X = df.sort_values(by=[features.to_predict]).drop(columns=features.categorical,errors="ignore")
         partition_indexes = [[] for i in range(k)]
 
         if self.species_in_validation > 0:
@@ -225,4 +233,4 @@ class DataPartitioner(TransformerMixin):
             y_partitions.append(Y_sorted[features.to_predict].iloc[pindex])
 
 
-        return ExpressionPartitions(features, X_sorted, Y_sorted, x_partitions, y_partitions, species_partitions, k)
+        return ExpressionPartitions(encodedFeatures, X_sorted, Y_sorted, x_partitions, y_partitions, species_partitions, k)

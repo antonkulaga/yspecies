@@ -1,5 +1,6 @@
 import lightgbm as lgb
 import shap
+from lightgbm import Booster
 from scipy.stats import kendalltau
 from sklearn.metrics import *
 
@@ -28,15 +29,17 @@ class Metrics:
 
 @dataclass
 class FeatureResults:
-    weights: pd.DataFrame
+    selected: pd.DataFrame
     stable_shap_values: np.ndarray
     metrics: pd.DataFrame
+    shap_sums: pd.DataFrame
+    #partitions: pd.DataFrame = None #mostly for debugging TODO: drop soon
 
     def _repr_html_(self):
         return f"<table border='2'>" \
                f"<caption>Feature selection results<caption>" \
                f"<tr><th>weights</th><th>Metrics</th></tr>" \
-               f"<tr><td>{self.weights._repr_html_()}</th><th>{self.metrics._repr_html_()}</th></tr>" \
+               f"<tr><td>{self.selected._repr_html_()}</th><th>{self.metrics._repr_html_()}</th></tr>" \
                f"</table>"
 
 @dataclass
@@ -58,7 +61,7 @@ class ModelFactory:
     })
 
 
-    def regression_model(self, X_train, X_test, y_train, y_test, categorical=None, params: dict = None): #, categorical):
+    def regression_model(self, X_train, X_test, y_train, y_test, categorical=None, params: dict = None) -> Booster:
         '''
         trains a regression model
         :param X_train:
@@ -69,9 +72,9 @@ class ModelFactory:
         :param params:
         :return:
         '''
-        categorical = categorical if isinstance(categorical, List) or categorical is None else [categorical]
         parameters = self.parameters if params is None else params
-        lgb_train = lgb.Dataset(X_train, y_train, categorical_feature=categorical)
+        cat = categorical if len(categorical) >0 else "auto"
+        lgb_train = lgb.Dataset(X_train, y_train, categorical_feature=cat)
         lgb_eval = lgb.Dataset(X_test, y_test, reference=lgb_train)
         evals_result = {}
         gbm = lgb.train(parameters,
@@ -105,7 +108,8 @@ class ShapSelector(TransformerMixin):
         for i in range(self.bootstraps):
             X_train, X_test, y_train, y_test = partitions.split_fold(i)
             # get trained model and record accuracy metrics
-            model = self.model_factory.regression_model(X_train, X_test, y_train, y_test)#, index_of_categorical)
+            index_of_categorical  = [ind for ind, c in enumerate(X_train.columns) if c in partitions.features.categorical]
+            model = self.model_factory.regression_model(X_train, X_test, y_train, y_test, index_of_categorical)
             self.models.append(model)
         return self
 
@@ -116,8 +120,9 @@ class ShapSelector(TransformerMixin):
         :return:
         '''
         weight_of_features = []
-        shap_values_out_of_fold = [[0 for i in range(len(partitions.X.values[0]))] for z in range(len(partitions.X))]
+        fold_shap_values = []
 
+        #shap_values_out_of_fold = np.zeros()
         #interaction_values_out_of_fold = [[[0 for i in range(len(X.values[0]))] for i in range(len(X.values[0]))] for z in range(len(X))]
         metrics = pd.DataFrame(np.zeros([self.bootstraps,3]), columns=["R^2", "MSE", "MAE"])
         #.sum(axis=0)
@@ -136,22 +141,24 @@ class ShapSelector(TransformerMixin):
 
             explainer = shap.TreeExplainer(model)
             shap_values = explainer.shap_values(partitions.X)
+            fold_shap_values.append(shap_values)
 
             #interaction_values = explainer.shap_interaction_values(X)
-            shap_values_out_of_fold = np.add(shap_values_out_of_fold, shap_values)
+            #shap_values_out_of_fold = np.add(shap_values_out_of_fold, shap_values)
             #interaction_values_out_of_fold = np.add(interaction_values_out_of_fold, interaction_values)
-        return weight_of_features, shap_values_out_of_fold, metrics
+        return weight_of_features, fold_shap_values, metrics
 
     def transform(self, partitions: ExpressionPartitions) -> FeatureResults:
 
-        weight_of_features, shap_values_out_of_fold, metrics = self.compute_folds(partitions)
+        weight_of_features, fold_shap_values, metrics = self.compute_folds(partitions)
         # calculate shap values out of fold
-        mean_shap_values_out_of_fold = shap_values_out_of_fold / float(self.bootstraps)
+        mean_shap_values = np.mean(fold_shap_values, axis=0)
         mean_metrics = metrics.mean(axis=0)
         print("MEAN metrics = "+str(mean_metrics))
-        shap_values_transposed = mean_shap_values_out_of_fold.T
-        shap_values_sums = shap_values_transposed.sum(axis=1)
-        X_transposed = partitions.X.T.values
+        shap_values_transposed = mean_shap_values.T
+
+        X_T = partitions.X.T
+        X_transposed = X_T.values
 
         gain_score_name = 'gain_score_to_'+partitions.features.to_predict
         kendal_tau_name = 'kendall_tau_to_'+partitions.features.to_predict
@@ -171,14 +178,15 @@ class ShapSelector(TransformerMixin):
                     output_features_by_weight.append({
                         'ensembl_id': partitions.X.columns[i],
                         gain_score_name: np.mean(cols),
-                        "shap": shap_values_sums[i],
                         #'name': partitions.X.columns[i], #ensemble_data.gene_name_of_gene_id(X.columns[i]),
                         kendal_tau_name: kendalltau(shap_values_transposed[i], X_transposed[i], nan_policy='omit')[0]
                     })
         selected_features = pd.DataFrame(output_features_by_weight)
         selected_features = selected_features.set_index("ensembl_id")
-        if isinstance(partitions.features.genes_meta, pd.DataFrame):
-            selected_features = partitions.features.genes_meta.drop(columns=["species"])\
+        if isinstance(partitions.data.genes_meta, pd.DataFrame):
+            selected_features = partitions.data.genes_meta.drop(columns=["species"])\
                 .join(selected_features, how="inner") \
                 .sort_values(by=["gain_score_to_lifespan"], ascending=False)
-        return FeatureResults(selected_features, shap_values_out_of_fold, metrics)
+        shap_sums = pd.DataFrame(np.vstack([np.sum(v, axis=0) for v in fold_shap_values]).T, index=X_T.index)
+        shap_sums = shap_sums.rename(columns={c:f"shap_sum_fold_{c}" for c in shap_sums.columns})
+        return FeatureResults(selected_features.join(shap_sums, how="left"), mean_shap_values, metrics, shap_sums)#, partitions)
