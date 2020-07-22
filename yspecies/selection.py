@@ -35,8 +35,8 @@ class FeatureResults:
     def _repr_html_(self):
         return f"<table border='2'>" \
                f"<caption>Feature selection results<caption>" \
-               f"<tr><th>weights</th><th>SHAP values</th><th>Metrics</th></tr>" \
-               f"<tr><td>{self.weights._repr_html_()}</th><td>{self.stable_shap_values.shape}</th><th>{self.metrics._repr_html_()}</th></tr>" \
+               f"<tr><th>weights</th><th>Metrics</th></tr>" \
+               f"<tr><td>{self.weights._repr_html_()}</th><th>{self.metrics._repr_html_()}</th></tr>" \
                f"</table>"
 
 @dataclass
@@ -128,7 +128,7 @@ class ShapSelector(TransformerMixin):
             y_test = partitions.y_partitions[i]
 
             # get trained model and record accuracy metrics
-            model = self.models[i]
+            model = self.models[i] #just using already trained model
             fold_predictions = model.predict(X_test, num_iteration=model.best_iteration)
             metrics.iloc[i] = Metrics.calculate(y_test, fold_predictions).to_numpy
 
@@ -167,7 +167,7 @@ class ShapSelector(TransformerMixin):
                 if col != 0:
                     non_zero_cols += 1
             if non_zero_cols == self.bootstraps:
-                if 'ENSG' in partitions.X.columns[i]: #TODO: change from ENSG checkup
+                if 'ENSG' in partitions.X.columns[i]: #TODO: change from hard-coded ENSG checkup to something more meaningful
                     output_features_by_weight.append({
                         'ensembl_id': partitions.X.columns[i],
                         gain_score_name: np.mean(cols),

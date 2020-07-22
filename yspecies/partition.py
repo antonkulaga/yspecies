@@ -11,12 +11,17 @@ from yspecies.utils import *
 
 @dataclass
 class SelectedFeatures:
+    '''
+    Class that contains parameters for feature selection
+    '''
 
-    samples: List[str] = None
-    species: List[str] =  field(default_factory=lambda: ["species"])
+    samples: List[str] = field(default_factory=lambda: ["tissue","species"])
+    species: List[str] = field(default_factory=lambda: [])
     genes: List[str] = None #if None = takes all genes
-    exclude_from_training: List[str] = field(default_factory=lambda: ["species"])#columns that should note be used for training
     to_predict: str = "lifespan"
+    categorical: List[str] = field(default_factory=lambda: ["tissue"])
+    exclude_from_training: List[str] = field(default_factory=lambda: ["species"])#columns that should note be used for training
+
 
     def prepare_for_training(self, df: pd.DataFrame):
         return df if self.exclude_from_training is None else df.drop(columns=self.exclude_from_training, errors="ignore")
@@ -24,12 +29,17 @@ class SelectedFeatures:
 
     @property
     def y_name(self):
+        '''
+        Just for nice display in jupyter
+        :return:
+        '''
         return f"Y_{self.to_predict}"
 
     content = None #content feature to
     genes_meta: pd.DataFrame = None #metada for genes
 
-    def with_content(self, content, genes_meta: pd.DataFrame = None) -> 'SelectedFeatures':
+    def with_content(self, content: pd.DataFrame, genes_meta: pd.DataFrame = None) -> 'SelectedFeatures':
+        content.columns
         self.content = content
         self.genes_meta = genes_meta
         return self
@@ -39,10 +49,11 @@ class SelectedFeatures:
         if content is None:
             return ""
         elif isinstance(content, pd.DataFrame):
-            if(content.shape[1]>100):
-                return show(content, 10, 10)._repr_html_()
+            df = content if self.to_predict not in content.columns else content.rename(columns={self.to_predict: self.y_name})
+            if(df.shape[1]>100):
+                return show(df, 10, 10)._repr_html_()
             else:
-                return content.head(10)._repr_html_()
+                return df.head(10)._repr_html_()
         else:
             return content._repr_html_()
 
@@ -56,6 +67,10 @@ class SelectedFeatures:
 
 @dataclass
 class DataExtractor(TransformerMixin):
+    '''
+    Workflow stage which extracts Data from ExpressionDataset
+    '''
+
     features: SelectedFeatures
 
     def fit(self, X, y=None) -> 'DataExtractor':
@@ -65,13 +80,16 @@ class DataExtractor(TransformerMixin):
         samples = data.extended_samples(self.features.samples, self.features.species)
         exp = data.expressions if self.features.genes is None else data.expressions[self.features.genes]
         X: pd.ataFrame = samples.join(exp, how="inner")
-        content = data.get_label(self.features.to_predict).join(X).rename(columns={self.features.to_predict: self.features.y_name})
+        content = data.get_label(self.features.to_predict).join(X)
         return self.features.with_content(content, data.genes_meta)
 
 
 
 @dataclass
 class ExpressionPartitions:
+    '''
+    Class is used as results of SortedStratification
+    '''
 
     features: SelectedFeatures
     X: pd.DataFrame
@@ -95,15 +113,14 @@ class ExpressionPartitions:
         '''
         return pd.concat(self.x_partitions[:i] + self.x_partitions[i+1:]), np.concatenate(self.y_partitions[:i] + self.y_partitions[i+1:], axis=0)
 
-
-def _repr_html_(self):
+    def _repr_html_(self):
         return f"<table>" \
                f"<tr><th>partitions_X</th><th>partitions_Y</th></tr>" \
-               f"<tr><td align='left'>{str([l.shape for l in self.x_partitions])}</td><td align='left'>{str([l.shape for l in self.y_partitions])}</td></tr>" \
+               f"<tr><td align='left'>[ {','.join([str(x.shape) for x in self.x_partitions])} ]</td>" \
+               f"<td align='left'>[ {','.join([str(y.shape) for y in self.y_partitions])} ]</td></tr>" \
                f"<tr><th>show(X,10,10)</th><th>show(Y,10,10)</th></tr>" \
                f"<tr><td>{show(self.X,10,10)._repr_html_()}</td><td>{show(self.Y,10,10)._repr_html_()}</td></tr>" \
                f"</table>"
-
 @dataclass
 class DataPartitioner(TransformerMixin):
     '''
@@ -135,27 +152,29 @@ class DataPartitioner(TransformerMixin):
         :param species_validation: number of species to leave only in validation set
         :return:
         '''
-        X = df.sort_values(by=[features.y_name])
+        X = df.sort_values(by=[features.to_predict])
         partition_indexes = [[] for i in range(k)]
 
         if self.species_in_validation > 0:
             all_species = X.species[~X["species"].isin(self.not_validated_species)].drop_duplicates().values
             df_index = X.index
-
+            #TODO: looks overly complicated (too many accumulating variables, refactor is needed)
             k_sets_indexes = []
             k_sets_of_species = []
             already_selected = []
             for i in range(k):
                 index_set = []
+                choices = []
                 for j in range(self.species_in_validation):
                     choice = random.choice(all_species)
                     while choice in already_selected:
                         choice = random.choice(all_species)
+                    choices.append(choice)
                     already_selected.append(choice)
-                k_sets_of_species.append(already_selected)
+                k_sets_of_species.append(choices)
                 species = X['species'].values
                 for j, c in enumerate(species):
-                    if c in already_selected:
+                    if c in choices:
                         index_set.append(j)
                 k_sets_indexes.append(index_set)
 
@@ -179,8 +198,10 @@ class DataPartitioner(TransformerMixin):
 
         species_df = X['species'].values
 
-        X_sorted = features.prepare_for_training(X.drop([features.y_name], axis=1))
-        Y_sorted = features.prepare_for_training(X[[features.y_name]].rename(columns={features.y_name: features.to_predict}))
+        #in X also have Y columns which we will separate to Y
+        X_sorted = features.prepare_for_training(X.drop([features.to_predict], axis=1))
+        #we had Y inside X with pretified name iin features, fixing it in paritions
+        Y_sorted = features.prepare_for_training(X[[features.to_predict]])
 
 
         #if self.species_in_validation > 0:

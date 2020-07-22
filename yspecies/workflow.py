@@ -35,6 +35,10 @@ class Orthology(Enum):
     many2many = "many2many"
     all = "all"
 
+class CleaningTarget(Enum):
+    expressions = "expressions"
+    genes = "genes"
+
 from pathlib import Path
 
 
