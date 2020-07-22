@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.base import TransformerMixin
 
 from yspecies.dataset import *
-from yspecies.misc import *
+from yspecies.utils import *
 
 
 @dataclass

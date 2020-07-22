@@ -15,6 +15,9 @@ import pandas as pd
 
 
 class ExpressionDataset:
+    '''
+    ExpressionDataset class to handle: samples, species, genes and expressions
+    '''
 
     @staticmethod
     def load(name: str,
@@ -25,6 +28,18 @@ class ExpressionDataset:
              genes_meta_path: Path = None,
              sep="\t",
              validate: bool = True):
+        '''
+        Loads expression dataset from separate files
+        :param name:
+        :param expressions_path: path to .tsv files with expressions
+        :param samples_path: path to .tsv file with samples
+        :param species_path: path to .tsv file with species metadata
+        :param genes_path: path to .tsv file with orthology table
+        :param genes_meta_path:  path to .tsv file with reference genes metadata
+        :param sep: separator - tab by default
+        :param validate: if we want to control that expressions have all the samples and genes
+        :return: ExpressionDataset
+        '''
         expressions =  pd.read_csv(expressions_path, sep=sep,  index_col="run")
         samples = pd.read_csv(samples_path, sep=sep,  index_col="run")
         species = None if species_path is None else pd.read_csv(species_path, sep=sep, index_col="species")
@@ -42,6 +57,18 @@ class ExpressionDataset:
              sep="\t",
              validate: bool = True
              ):
+        '''
+        Function to load ExpressionDataset from specific folder and configure (if needed) the names of the corresponding files
+        :param folder:
+        :param expressions_name:
+        :param samples_name:
+        :param species_name:
+        :param genes_name:
+        :param genes_meta_name:
+        :param sep:
+        :param validate:
+        :return:
+        '''
         name = folder.name
         genes_meta_path = folder / genes_meta_name if (folder / genes_meta_name).exists() else None
         species_path = folder / species_name if (folder / species_name).exists() else None
@@ -85,6 +112,10 @@ class ExpressionDataset:
 
     @property
     def by_samples(self):
+        '''
+        Indexes by samples
+        :return:
+        '''
         return SamplesIndexes(self)
 
     def __len__(self):
@@ -102,15 +133,10 @@ class ExpressionDataset:
         else:
             assert label in self.genes.columns.to_list(), f"cannot find label {label} anywhere!"
 
-    @property
-    def extended_expressions(self):
-        assert self.has_gene_info(), "Should have additional gene info"
-        pass
-
 
     def extended_samples(self, samples_columns: List[str] = None, species_columns: List[str] = None):
         '''
-        Samples that also inclode species info
+        Merges samples with species dataframes
         :return:
         '''
         assert self.has_species_info(), "to get extended samples information there should be species info"
@@ -142,12 +168,17 @@ class ExpressionDataset:
 
 
     def copy(self): #TODO copy-meta (if exists)
-        return ExpressionDataset(self.name, self.expressions.copy(),
-                                 self.genes.copy(),
-                                 self.samples.copy())
+        return ExpressionDataset(self.name,
+                                 self.expressions.copy(),
+                                 self.samples.copy(),
+                                 self.species.copy() if self.species is not None else None,
+                                 self.genes.copy() if self.genes is not None else None,
+                                 self.genes_meta.copy() if self.genes_meta  is not None else None
+                                 )
 
     def __getitem__(self, items: tuple or List[str] or str):
         """
+        Main indexer of ExpressionDataset
         :param items:
         :return: dataset[genes, samples] or dataset.by_genes[genes] if samples not specified
         """
@@ -168,6 +199,10 @@ class ExpressionDataset:
         return [self.expressions, self.genes, self.samples]
 
     def _repr_html_(self):
+        '''
+        Function to provide nice HTML outlook in jupyter lab notebooks
+        :return:
+        '''
         gs = str(None) if self.genes_meta is None else str(self.genes_meta.shape)
         ss = str(None) if self.species is None else str(self.species.shape)
         return f"<table border='2'>" \
@@ -184,6 +219,18 @@ class ExpressionDataset:
               genes_meta_name: str = "genes_meta.tsv",
               name_as_folder: bool = True,
               sep: str = "\t"):
+        '''
+        Writes ExpressionDataset to specific folder
+        :param folder:
+        :param expressions_name:
+        :param samples_name:
+        :param species_name:
+        :param genes_name:
+        :param genes_meta_name:
+        :param name_as_folder:
+        :param sep:
+        :return:
+        '''
         d: Path = folder if type(folder) == Path else Path(folder)
         folder: Path = d / self.name if name_as_folder else d
         folder.mkdir(parents=True, exist_ok=True) #create if not exist
@@ -205,6 +252,11 @@ class SamplesIndexes:
         self.dataset = dataset
 
     def collect(self, filter_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> ExpressionDataset:
+        '''
+        Function to transform the samples (and filter related data in expressions dataframe) according to the lambda provided
+        :param filter_fun:
+        :return:
+        '''
         upd_samples: pd.DataFrame = filter_fun(self.dataset.samples)
         runs = upd_samples.index.tolist()
         upd_expressions = self.dataset.expressions.loc[runs]
@@ -212,10 +264,20 @@ class SamplesIndexes:
 
 
     def filter(self, filter_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> ExpressionDataset:
+        '''
+        Function to filter DataSet samples (and filter related data in expressionda dataframe) according to the lambda provided
+        :param filter_fun:
+        :return:
+        '''
         return self.collect(lambda df: self.dataset.samples[filter_fun(df)])
 
 
     def __getitem__(self, item) -> ExpressionDataset:
+        '''
+        Samples index function
+        :param item:
+        :return:
+        '''
         items = [item] if type(item) == str else item
         upd_samples = self.dataset.samples.loc[items]
         upd_expressions = self.dataset.expressions.loc[items]
@@ -223,6 +285,10 @@ class SamplesIndexes:
 
 
     def _repr_html_(self):
+        '''
+        Nice JupyterLab table HTML representation
+        :return:
+        '''
         return f"<table border='2'>" \
                f"<caption>{self.dataset.name} samples view<caption>" \
                f"<tr><th>Samples</th>" \

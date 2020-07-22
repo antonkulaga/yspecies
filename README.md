@@ -35,10 +35,16 @@ dvc repro
 ```
 Most of the stages also produce notebooks together with files in the output
 
-Yspecies classes
-----------------
+## Yspecies package ##
 
-### Indexing ###
+Yspecies package has the following modules:
+* dataset - ExpressionDataset class to handle cross-species samples, genes, species metadata and expressions
+* partition - classes required for sci-kit-learn pipeline starting from ExpressionDataset going to SortedStratification
+* selection - LightGBM and SHAP-based feature selection
+* utils - varios utility functions and classes
+* workflow - helper classes required to reproduce pipelines in the paper (like enums, locations and so on)
+
+### ExpressionDataset ###
 
 One of the key classes is ExpressionDataset class:
 ```python
