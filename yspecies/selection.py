@@ -5,7 +5,10 @@ from scipy.stats import kendalltau
 from sklearn.metrics import *
 
 from yspecies.partition import *
-
+from yspecies.utils import *
+from more_itertools import flatten
+from functools import cached_property
+import matplotlib.pyplot as plt
 
 @dataclass
 class Metrics:
@@ -23,17 +26,88 @@ class Metrics:
     MSE: float
     MAE: float
 
-    @property
+    @cached_property
     def to_numpy(self):
         return np.array([self.R2, self.MSE, self.MAE])
 
 @dataclass
 class FeatureResults:
+    '''
+    Feature results class
+    '''
+
     selected: pd.DataFrame
-    stable_shap_values: np.ndarray
+    shap_values: List[np.ndarray]
     metrics: pd.DataFrame
-    shap_sums: pd.DataFrame
-    #partitions: pd.DataFrame = None #mostly for debugging TODO: drop soon
+    partitions: ExpressionPartitions = field(default_factory=lambda: None)
+
+    def __repr__(self):
+        #to fix jupyter freeze (see https://github.com/ipython/ipython/issues/9771 )
+        return self._repr_html_()
+
+
+    @cached_property
+    def shap_sums(self):
+        shap_positive_sums = pd.DataFrame(np.vstack([np.sum(more_or_value(v, 0.0, 0.0), axis=0) for v in self.shap_values]).T, index=self.partitions.X_T.index)
+        shap_positive_sums = shap_positive_sums.rename(columns={c:f"plus_shap_{c}" for c in shap_positive_sums.columns})
+        shap_negative_sums = pd.DataFrame(np.vstack([np.sum(less_or_value(v, 0.0, 0.0), axis=0) for v in self.shap_values]).T, index=self.partitions.X_T.index)
+        shap_negative_sums = shap_negative_sums.rename(columns={c:f"minus_shap_{c}" for c in shap_negative_sums.columns})
+        sh_cols = [c for c in flatten(zip(shap_positive_sums, shap_negative_sums))]
+        shap_sums = shap_positive_sums.join(shap_negative_sums)[sh_cols]
+        return shap_sums
+
+
+    @cached_property
+    def stable_shap_values(self):
+        return np.mean(self.shap_values, axis=0)
+
+    @cached_property
+    def feature_names(self):
+        return self.partitions.data.genes_meta["symbol"].values
+
+    def _plot_(self, shap_values: List[np.ndarray] or np.ndarray, gene_names: bool = True, save: Path = None,
+               max_display=None, title=None, layered_violin_max_num_bins = 20,
+               plot_type=None, color=None, axis_color="#333333", alpha=1, class_names=None
+               ):
+        #shap.summary_plot(shap_values, self.partitions.X, show=False)
+        feature_names = None if gene_names is False else self.feature_names
+        shap.summary_plot(shap_values, self.partitions.X, feature_names=feature_names, show=False,
+                          max_display=max_display, title=title, layered_violin_max_num_bins=layered_violin_max_num_bins,
+                          class_names=class_names,
+                          # class_inds=class_inds,
+                          plot_type=plot_type,
+                          color=color, axis_color=axis_color, alpha=alpha
+                          )
+        fig = plt.gcf()
+        if save is not None:
+            from IPython.display import set_matplotlib_formats
+            set_matplotlib_formats('svg')
+            plt.savefig(save)
+        plt.close()
+        return fig
+
+    def plot(self, gene_names: bool = True, save: Path = None,
+            title=None,  max_display=100, layered_violin_max_num_bins = 20,
+             plot_type=None, color=None, axis_color="#333333", alpha=1, show=True, class_names=None):
+        return self._plot_(self.stable_shap_values, gene_names, save, title, max_display,
+                           layered_violin_max_num_bins, plot_type, color, axis_color, alpha, class_names)
+
+
+    def plot_folds(self, names: bool = True, save: Path = None, title=None,
+                   max_display=100, layered_violin_max_num_bins = 20,
+                   plot_type=None, color=None, axis_color="#333333", alpha=1):
+        class_names = ["fold_"+str(i) for i in range(len(self.shap_values))]
+        return self._plot_(self.shap_values, names, save, title, max_display,
+                           layered_violin_max_num_bins, plot_type, color, axis_color, alpha, class_names = class_names)
+
+
+
+    def plot_one_fold(self, num: int, names: bool = True, save: Path = None, title=None,
+                      max_display=100, layered_violin_max_num_bins = 20,
+                      plot_type=None, color=None, axis_color="#333333", alpha=1):
+        assert num < len(self.shap_values), f"there are no shap values for fold {str(num)}!"
+        return self._plot_(self.shap_values[num], names, save, title, max_display,
+                           layered_violin_max_num_bins, plot_type, color, axis_color, alpha)
 
     def _repr_html_(self):
         return f"<table border='2'>" \
@@ -45,7 +119,7 @@ class FeatureResults:
 @dataclass
 class ModelFactory:
 
-    parameters: Dict = field(default_factory = lambda : {
+    parameters: Dict = field(default_factory=lambda: {
         'boosting_type': 'gbdt',
         'objective': 'regression',
         'metric': {'l2', 'l1'},
@@ -94,7 +168,6 @@ class ShapSelector(TransformerMixin):
     '''
 
     model_factory: ModelFactory
-    bootstraps: int = 5
     models: List = field(default_factory=lambda: [])
 
     def fit(self, partitions: ExpressionPartitions, y=None) -> 'DataExtractor':
@@ -104,8 +177,9 @@ class ShapSelector(TransformerMixin):
         :param y:
         :return:
         '''
-        self.models = []
-        for i in range(self.bootstraps):
+        self.models = []       
+        folds = partitions.folds
+        for i in range(folds):
             X_train, X_test, y_train, y_test = partitions.split_fold(i)
             # get trained model and record accuracy metrics
             index_of_categorical  = [ind for ind, c in enumerate(X_train.columns) if c in partitions.features.categorical]
@@ -121,13 +195,14 @@ class ShapSelector(TransformerMixin):
         '''
         weight_of_features = []
         fold_shap_values = []
+        folds = partitions.folds
 
         #shap_values_out_of_fold = np.zeros()
         #interaction_values_out_of_fold = [[[0 for i in range(len(X.values[0]))] for i in range(len(X.values[0]))] for z in range(len(X))]
-        metrics = pd.DataFrame(np.zeros([self.bootstraps,3]), columns=["R^2", "MSE", "MAE"])
+        metrics = pd.DataFrame(np.zeros([folds, 3]), columns=["R^2", "MSE", "MAE"])
         #.sum(axis=0)
-        assert len(self.models) == self.bootstraps, "for each bootstrap there should be a model"
-        for i in range(self.bootstraps):
+        assert len(self.models) == folds, "for each bootstrap there should be a model"
+        for i in range(folds):
 
             X_test = partitions.x_partitions[i]
             y_test = partitions.y_partitions[i]
@@ -156,14 +231,14 @@ class ShapSelector(TransformerMixin):
         mean_metrics = metrics.mean(axis=0)
         print("MEAN metrics = "+str(mean_metrics))
         shap_values_transposed = mean_shap_values.T
+        folds = partitions.folds
 
-        X_T = partitions.X.T
-        X_transposed = X_T.values
+        X_transposed = partitions.X_T.values
 
         gain_score_name = 'gain_score_to_'+partitions.features.to_predict
         kendal_tau_name = 'kendall_tau_to_'+partitions.features.to_predict
 
-        # get features that have stable weight across bootstraps
+        # get features that have stable weight across self.bootstraps
         output_features_by_weight = []
         for i, index_of_col in enumerate(weight_of_features[0]):
             cols = []
@@ -173,7 +248,7 @@ class ShapSelector(TransformerMixin):
             for col in cols:
                 if col != 0:
                     non_zero_cols += 1
-            if non_zero_cols == self.bootstraps:
+            if non_zero_cols == folds:
                 if 'ENSG' in partitions.X.columns[i]: #TODO: change from hard-coded ENSG checkup to something more meaningful
                     output_features_by_weight.append({
                         'ensembl_id': partitions.X.columns[i],
@@ -187,6 +262,4 @@ class ShapSelector(TransformerMixin):
             selected_features = partitions.data.genes_meta.drop(columns=["species"])\
                 .join(selected_features, how="inner") \
                 .sort_values(by=["gain_score_to_lifespan"], ascending=False)
-        shap_sums = pd.DataFrame(np.vstack([np.sum(v, axis=0) for v in fold_shap_values]).T, index=X_T.index)
-        shap_sums = shap_sums.rename(columns={c:f"shap_sum_fold_{c}" for c in shap_sums.columns})
-        return FeatureResults(selected_features.join(shap_sums, how="left"), mean_shap_values, metrics, shap_sums)#, partitions)
+        return FeatureResults(selected_features, fold_shap_values, metrics, partitions)

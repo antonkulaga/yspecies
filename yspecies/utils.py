@@ -7,6 +7,7 @@ from typing import *
 import pandas as pd
 from IPython.display import HTML, display
 from dataclasses import dataclass
+import numpy as np
 
 @dataclass
 class Table:
@@ -36,3 +37,13 @@ class Table:
 
 def show(df: pd.DataFrame, cols: int, rows: int = 3) -> pd.DataFrame:
     return df[df.columns[0:cols]].head(rows)
+
+def less_or_value(n: np.ndarray, max: float = 0.0, value: float = 0.0):
+    k = n.copy()
+    k[k >= max] = value
+    return k
+
+def more_or_value(n: np.ndarray, min: float = 0.0, value: float = 0.0):
+    k = n.copy()
+    k[k <= min] = value
+    return k

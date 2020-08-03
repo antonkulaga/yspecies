@@ -8,6 +8,8 @@ from sklearn.base import TransformerMixin
 from yspecies.dataset import *
 from yspecies.utils import *
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from functools import cached_property
+
 
 @dataclass
 class FeatureSelection:
@@ -22,7 +24,6 @@ class FeatureSelection:
     categorical: List[str] = field(default_factory=lambda: ["tissue"])
     exclude_from_training: List[str] = field(default_factory=lambda: ["species"])#columns that should note be used for training
 
-
     def prepare_for_training(self, df: pd.DataFrame):
         return df if self.exclude_from_training is None else df.drop(columns=self.exclude_from_training, errors="ignore")
 
@@ -35,38 +36,30 @@ class FeatureSelection:
         '''
         return f"Y_{self.to_predict}"
 
-    content = None #content feature to
     genes_meta: pd.DataFrame = None #metada for genes
-
-    #def with_content(self, content: pd.DataFrame, genes_meta: pd.DataFrame = None) -> 'SelectedFeatures':
-    #    content.columns
-    #    self.content = content
-    #    self.genes_meta = genes_meta
-    #    return self
-
 
 
 @dataclass
 class EncodedFeatures:
 
-    def __init__(self, features: FeatureSelection, df: pd.DataFrame, genes_meta: pd.DataFrame = None):
+    def __init__(self, features: FeatureSelection, samples: pd.DataFrame, genes_meta: pd.DataFrame = None):
         self.genes_meta = genes_meta
         self.features = features
-        self.content = df
+        self.samples = samples
         if len(features.categorical) < 1:
             self.encoders = []
         else:
             self.encoders: Dict[str, LabelEncoder] = {f: LabelEncoder() for f in features.categorical}
             for col, encoder in self.encoders.items():
                 col_encoded = col+"encoded"
-                self.content[col_encoded] = encoder.fit_transform(df[col].values)
+                self.samples[col_encoded] = encoder.fit_transform(samples[col].values)
 
     def _repr_html_(self):
         return f"<table border='2'>" \
                f"<caption> Selected feature columns <caption>" \
                f"<tr><th>Samples metadata</th><th>Species metadata</th><th>Genes</th><th>Predict label</th></tr>" \
                f"<tr><td>{str(self.samples)}</td><td>{str(self.species)}</td><td>{'all' if self.genes is None else str(self.genes)}</td><td>{str(self.to_predict)}</td></tr>" \
-               f"</table>{show(self.content, 10, 10)._repr_html_()}"
+               f"</table>"
 
 @dataclass
 class DataExtractor(TransformerMixin):
@@ -83,8 +76,8 @@ class DataExtractor(TransformerMixin):
         samples = data.extended_samples(self.features.samples, self.features.species)
         exp = data.expressions if self.features.genes is None else data.expressions[self.features.genes]
         X: pd.ataFrame = samples.join(exp, how="inner")
-        content = data.get_label(self.features.to_predict).join(X)
-        return EncodedFeatures(self.features, content, data.genes_meta)
+        samples = data.get_label(self.features.to_predict).join(X)
+        return EncodedFeatures(self.features, samples, data.genes_meta)
 
 
 @dataclass
@@ -100,6 +93,10 @@ class ExpressionPartitions:
     y_partitions: List
     species_partitions: List
     folds: int # number of paritions
+
+    @cached_property
+    def X_T(self) -> pd.DataFrame:
+        return self.X.T
 
     @property
     def features(self):
@@ -119,6 +116,10 @@ class ExpressionPartitions:
         '''
         return pd.concat(self.x_partitions[:i] + self.x_partitions[i+1:]), np.concatenate(self.y_partitions[:i] + self.y_partitions[i+1:], axis=0)
 
+    def __repr__(self):
+        #to fix jupyter freeze (see https://github.com/ipython/ipython/issues/9771 )
+        return self._repr_html_()
+
     def _repr_html_(self):
         return f"<table>" \
                f"<tr><th>partitions_X</th><th>partitions_Y</th></tr>" \
@@ -127,12 +128,13 @@ class ExpressionPartitions:
                f"<tr><th>show(X,10,10)</th><th>show(Y,10,10)</th></tr>" \
                f"<tr><td>{show(self.X,10,10)._repr_html_()}</td><td>{show(self.Y,10,10)._repr_html_()}</td></tr>" \
                f"</table>"
+
 @dataclass
 class DataPartitioner(TransformerMixin):
     '''
     Partitions the data according to sorted stratification
     '''
-    folds: int = 5
+    folds: int
     species_in_validation: int = 2 #exclude species to validate them
     not_validated_species: List[str] = field(default_factory=lambda: ["Homo sapiens"])
 
@@ -146,7 +148,7 @@ class DataPartitioner(TransformerMixin):
         :param k: number of k-folds in sorted stratification
         :return: partitions
         '''
-        assert isinstance(selected.content, pd.DataFrame), "Should contain extracted Pandas DataFrame with X and Y"
+        assert isinstance(selected.samples, pd.DataFrame), "Should contain extracted Pandas DataFrame with X and Y"
         return self.sorted_stratification(selected, self.folds)
 
     def sorted_stratification(self, encodedFeatures: EncodedFeatures, k: int) -> ExpressionPartitions:
@@ -158,9 +160,11 @@ class DataPartitioner(TransformerMixin):
         :param species_validation: number of species to leave only in validation set
         :return:
         '''
-        df = encodedFeatures.content
+        df = encodedFeatures.samples
         features = encodedFeatures.features
-        X = df.sort_values(by=[features.to_predict]).drop(columns=features.categorical,errors="ignore")
+        X = df.sort_values(by=[features.to_predict], ascending=False
+                           
+                           ).drop(columns=features.categorical,errors="ignore")
         partition_indexes = [[] for i in range(k)]
 
         if self.species_in_validation > 0:
