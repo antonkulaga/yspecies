@@ -39,21 +39,23 @@ select_samples:
     md5: 17e2bb8020c8ac1f8c3c7445fac901c3
   - path: data/input/species.tsv
     md5: cdf6379f1d78780afc6f650b10636494
+  - path: data/input/total_mtDNA_base_composition.csv
+    md5: 3735cfc4beffb6c9356f908525345ee6
   - path: notebooks/select_samples.ipynb
-    md5: 83e5742b5df19e73b967292270de16e3
+    md5: 246a58020b01860eb71cdb558b28bac0
   - path: parameters/select_samples.yaml
     md5: aa126cb70666d7352f7e6ff6005124b7
   outs:
   - path: data/interim/selected/expressions.tsv
-    md5: f1467ba821945a93dcb5ac926ff80064
+    md5: 60942869bc29257f57b92088337922b0
   - path: data/interim/selected/genes.tsv
-    md5: c31d80788f07d08ae35edf17849288a8
+    md5: 08f457c2517b3f601f5e58e3b1ec4ae0
   - path: data/interim/selected/genes_meta.tsv
-    md5: da56452e58c020db296a3ea8677d4b07
+    md5: 0387f21fcd4b287dc924432c8b90042d
   - path: data/interim/selected/samples.tsv
-    md5: f3a11a4ad6550a7f356bf51e7a4e183b
+    md5: c370e925f56a0ed33b7dcb16553d4c39
   - path: data/interim/selected/species.tsv
-    md5: 74a64f77b443ed7b6e9b44240953ec7a
+    md5: 44e0c63a0d7749abcd43b3c1f92cc54b
   - path: data/output/counts/species_sample_count.tsv
     md5: eced40b842c0ec786a43d0e8c1da073d
   - path: data/output/counts/species_tissue_sample_count.tsv
@@ -61,7 +63,7 @@ select_samples:
   - path: data/output/counts/tissue_sample_count.tsv
     md5: 95d7d50886117aae30a8ee8c335f5076
   - path: data/output/notebooks/select_samples.ipynb
-    md5: e9669516f7cbf08b3f148172ca7ed835
+    md5: 954d63d340cf17a15c9cc5235839c7cd
 results_intersections:
   cmd: papermill -f parameters/results_intersections.yaml  --progress-bar --report-mode
     notebooks/results_intersections.ipynb data/output/notebooks/results_intersections.ipynb
@@ -92,15 +94,15 @@ shap_selection:
     data/output/notebooks/shap_selection.ipynb
   deps:
   - path: data/interim/selected/expressions.tsv
-    md5: f1467ba821945a93dcb5ac926ff80064
+    md5: 60942869bc29257f57b92088337922b0
   - path: data/interim/selected/genes.tsv
-    md5: c31d80788f07d08ae35edf17849288a8
+    md5: 08f457c2517b3f601f5e58e3b1ec4ae0
   - path: data/interim/selected/genes_meta.tsv
-    md5: da56452e58c020db296a3ea8677d4b07
+    md5: 0387f21fcd4b287dc924432c8b90042d
   - path: data/interim/selected/samples.tsv
-    md5: f3a11a4ad6550a7f356bf51e7a4e183b
+    md5: c370e925f56a0ed33b7dcb16553d4c39
   - path: data/interim/selected/species.tsv
-    md5: 74a64f77b443ed7b6e9b44240953ec7a
+    md5: 44e0c63a0d7749abcd43b3c1f92cc54b
   outs:
   - path: data/output/notebooks/shap_selection.ipynb
-    md5: d81dd88bdf5d952f8ce8b464ea3c24ec
+    md5: 42a09aec93f5f95dad8105eb9c98e077

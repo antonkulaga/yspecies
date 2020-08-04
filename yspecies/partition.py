@@ -1,14 +1,12 @@
-from dataclasses import *
 import random
-from typing import *
-import numpy as np
-import pandas as pd
-from sklearn.base import TransformerMixin
-
-from yspecies.dataset import *
-from yspecies.utils import *
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from dataclasses import *
 from functools import cached_property
+
+from sklearn.base import TransformerMixin
+from sklearn.preprocessing import LabelEncoder
+
+from yspecies.dataset import ExpressionDataset
+from yspecies.utils import *
 
 
 @dataclass
@@ -23,6 +21,7 @@ class FeatureSelection:
     to_predict: str = "lifespan"
     categorical: List[str] = field(default_factory=lambda: ["tissue"])
     exclude_from_training: List[str] = field(default_factory=lambda: ["species"])#columns that should note be used for training
+    genes_meta: pd.DataFrame = None #metada for genes, TODO: check if still needed
 
     def prepare_for_training(self, df: pd.DataFrame):
         return df if self.exclude_from_training is None else df.drop(columns=self.exclude_from_training, errors="ignore")
@@ -36,10 +35,14 @@ class FeatureSelection:
         '''
         return f"Y_{self.to_predict}"
 
-    genes_meta: pd.DataFrame = None #metada for genes
+    def _repr_html_(self):
+        return f"<table border='2'>" \
+               f"<caption> Selected feature columns <caption>" \
+               f"<tr><th>Samples metadata</th><th>Species metadata</th><th>Genes</th><th>Predict label</th></tr>" \
+               f"<tr><td>{str(self.samples)}</td><td>{str(self.species)}</td><td>{'all' if self.genes is None else str(self.genes)}</td><td>{str(self.to_predict)}</td></tr>" \
+               f"</table>"
 
 
-@dataclass
 class EncodedFeatures:
 
     def __init__(self, features: FeatureSelection, samples: pd.DataFrame, genes_meta: pd.DataFrame = None):
@@ -54,12 +57,13 @@ class EncodedFeatures:
                 col_encoded = col+"encoded"
                 self.samples[col_encoded] = encoder.fit_transform(samples[col].values)
 
+
+    def __repr__(self):
+        #to fix jupyter freeze (see https://github.com/ipython/ipython/issues/9771 )
+        return self._repr_html_()
+
     def _repr_html_(self):
-        return f"<table border='2'>" \
-               f"<caption> Selected feature columns <caption>" \
-               f"<tr><th>Samples metadata</th><th>Species metadata</th><th>Genes</th><th>Predict label</th></tr>" \
-               f"<tr><td>{str(self.samples)}</td><td>{str(self.species)}</td><td>{'all' if self.genes is None else str(self.genes)}</td><td>{str(self.to_predict)}</td></tr>" \
-               f"</table>"
+        return f"<table><caption>top 10 * 100 features/samples</caption><tr><td>{self.features._repr_html_()}</td><tr><td>{show(self.samples,100,10)._repr_html_()}</td></tr>"
 
 @dataclass
 class DataExtractor(TransformerMixin):
@@ -91,8 +95,9 @@ class ExpressionPartitions:
     Y: pd.DataFrame
     x_partitions: List
     y_partitions: List
+    validation_species: List[List]
     species_partitions: List
-    folds: int # number of paritions
+    folds: int #number of partitions
 
     @cached_property
     def X_T(self) -> pd.DataFrame:
@@ -237,4 +242,4 @@ class DataPartitioner(TransformerMixin):
             y_partitions.append(Y_sorted[features.to_predict].iloc[pindex])
 
 
-        return ExpressionPartitions(encodedFeatures, X_sorted, Y_sorted, x_partitions, y_partitions, species_partitions, k)
+        return ExpressionPartitions(encodedFeatures, X_sorted, Y_sorted, x_partitions, y_partitions, k_sets_of_species, species_partitions, k)

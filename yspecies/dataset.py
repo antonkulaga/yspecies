@@ -160,10 +160,8 @@ class ExpressionDataset:
 
         Raises: AssertionError when violated.
         """
-        assert (self.expressions.index == self.samples.index).all, ""
-        "Data dataframe and samples_meta are incompatible."
-        assert (self.expressions.columns == self.genes.index).all, ""
-        "Data dataframe and features_meta are incompatible."
+        assert (self.expressions.index == self.samples.index).all(), f"Expressions dataframe {self.expressions.shape} and samples {self.samples.shape} are incompatible."
+        assert (self.expressions.columns == self.genes.index).all(), f"Expressions dataframe  {self.expressions.shape} and genes  {self.genes.shape} are incompatible."
 
 
 
@@ -244,6 +242,18 @@ class ExpressionDataset:
         print(f"written {self.name} dataset content to {str(folder)}")
         return folder
 
+    def collect(self, filter_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> 'ExpressionDataset':
+        '''
+        Collects expressions and rewrites other dataframes
+        :param filter_fun:
+        :return:
+        '''
+        upd_expressions: pd.DataFrame = filter_fun(self.expressions.copy())
+        upd_genes = self.genes.loc[upd_expressions.columns]
+        upd_samples = self.samples.copy()
+        upd_samples.index = upd_expressions.index
+        return ExpressionDataset(self.name, upd_expressions, upd_samples, self.species, upd_genes, self.genes_meta)
+
 class SamplesIndexes:
     """
     Representes by_samples indexer, i.d. dataset.by_samples[[gene_ids]]
@@ -257,7 +267,7 @@ class SamplesIndexes:
         :param filter_fun:
         :return:
         '''
-        upd_samples: pd.DataFrame = filter_fun(self.dataset.samples)
+        upd_samples: pd.DataFrame = filter_fun(self.dataset.samples.copy())
         runs = upd_samples.index.tolist()
         upd_expressions = self.dataset.expressions.loc[runs]
         return ExpressionDataset(self.dataset.name, upd_expressions, self.dataset.genes, upd_samples)
@@ -281,7 +291,7 @@ class SamplesIndexes:
         items = [item] if type(item) == str else item
         upd_samples = self.dataset.samples.loc[items]
         upd_expressions = self.dataset.expressions.loc[items]
-        return ExpressionDataset(self.dataset.name, upd_expressions, self.dataset.genes, upd_samples)
+        return ExpressionDataset(self.dataset.name, upd_expressions, upd_samples, self.dataset.species, self.dataset.genes, self.dataset.genes_meta)
 
 
     def _repr_html_(self):
@@ -317,10 +327,11 @@ class GenesIndexes:
                f"</table>"
 
     def collect(self, filter_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> ExpressionDataset:
-        upd_genes: pd.DataFrame = filter_fun(self.dataset.genes)
+        upd_genes: pd.DataFrame = filter_fun(self.dataset.genes.copy())
         genes = upd_genes.index.tolist()
-        upd_expressions = self.dataset.expressions[genes]
-        return ExpressionDataset(self.dataset.name, upd_expressions, upd_genes, self.dataset.samples)
+        upd_expressions = self.dataset.expressions[genes].copy()
+        upd_expressions.index = self.dataset.samples.index
+        return ExpressionDataset(self.dataset.name, upd_expressions, self.dataset.samples, self.dataset.species, upd_genes, self.dataset.genes_meta)
 
     def filter(self, filter_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> ExpressionDataset:
         return self.collect(lambda df: self.dataset.genes[filter_fun(df)])
