@@ -42,12 +42,12 @@ select_samples:
   - path: data/input/total_mtDNA_base_composition.csv
     md5: 3735cfc4beffb6c9356f908525345ee6
   - path: notebooks/select_samples.ipynb
-    md5: 246a58020b01860eb71cdb558b28bac0
+    md5: 7e09a0fdc14b0e40a175f18f4e9ce7b4
   - path: parameters/select_samples.yaml
     md5: aa126cb70666d7352f7e6ff6005124b7
   outs:
   - path: data/interim/selected/expressions.tsv
-    md5: 60942869bc29257f57b92088337922b0
+    md5: e8e8ea38f54eec4c9d51069d8cc2fde0
   - path: data/interim/selected/genes.tsv
     md5: 08f457c2517b3f601f5e58e3b1ec4ae0
   - path: data/interim/selected/genes_meta.tsv
@@ -63,7 +63,7 @@ select_samples:
   - path: data/output/counts/tissue_sample_count.tsv
     md5: 95d7d50886117aae30a8ee8c335f5076
   - path: data/output/notebooks/select_samples.ipynb
-    md5: 954d63d340cf17a15c9cc5235839c7cd
+    md5: d9c539895dd28c2956a34375dda2523f
 results_intersections:
   cmd: papermill -f parameters/results_intersections.yaml  --progress-bar --report-mode
     notebooks/results_intersections.ipynb data/output/notebooks/results_intersections.ipynb
@@ -94,7 +94,7 @@ shap_selection:
     data/output/notebooks/shap_selection.ipynb
   deps:
   - path: data/interim/selected/expressions.tsv
-    md5: 60942869bc29257f57b92088337922b0
+    md5: e8e8ea38f54eec4c9d51069d8cc2fde0
   - path: data/interim/selected/genes.tsv
     md5: 08f457c2517b3f601f5e58e3b1ec4ae0
   - path: data/interim/selected/genes_meta.tsv
@@ -105,4 +105,4 @@ shap_selection:
     md5: 44e0c63a0d7749abcd43b3c1f92cc54b
   outs:
   - path: data/output/notebooks/shap_selection.ipynb
-    md5: 42a09aec93f5f95dad8105eb9c98e077
+    md5: c48cb96cd95b4936a3adb043018a6d8c

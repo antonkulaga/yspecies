@@ -35,16 +35,40 @@ dvc repro
 ```
 Most of the stages also produce notebooks together with files in the output
 
-## Yspecies package ##
+# Key notebooks #
+
+There are several key notebooks in the projects. All notebooks can be run either from jupyter (by jupyter lab notebooks) or command-line by dvc repro.
+* **select_samples notebook** does preprocessing to select right combination of samples, genes and species. Most of other notebooks depend on it
+* **shap_selection notebook** contains shap_selection code that was rewriteen from initial **2_gbm_explanations** file written by Vlada
+* **results_intersections notebook** is used to compute intersection tables taken from several analysis methods (linear and shap)
+* **explainable_boosting notebook** is just an experimental notebook to play with Explainable Gradient boosting
+* **prepare proteins notebook** is used to prepare some protein sequences for Eliza's protein sequence analysis. It is not complited as there is also Polynote code that does part of this job
+
+## Running notebooks manually ##
+
+You can run notebooks manually by:
+```bash
+jupyter lab notebooks
+```
+And then running the notebook of our choice. 
+However, keep in mind that notebooks depend on each other.
+In particular, select_samples notebook generates the data for all others.
+
+# Core SHAP selection logic #
+
+Most of the code is packed into classes. The workflow is build on top of scikitlean Pipelines.
+
+# Yspecies package #
 
 Yspecies package has the following modules:
 * dataset - ExpressionDataset class to handle cross-species samples, genes, species metadata and expressions
 * partition - classes required for sci-kit-learn pipeline starting from ExpressionDataset going to SortedStratification
 * selection - LightGBM and SHAP-based feature selection
+* results - FeatureSelection results with some auxilary methods to explore specific genes and shap values
 * utils - varios utility functions and classes
 * workflow - helper classes required to reproduce pipelines in the paper (like enums, locations and so on)
 
-### ExpressionDataset ###
+## ExpressionDataset ##
 
 One of the key classes is ExpressionDataset class:
 ```python
@@ -74,12 +98,40 @@ e.by_samples.filter(lambda s: s["tissue"]=="Blood")
 
 The class is also Jupyter-friendly with _repr_html_() method implemented
 
-## Running notebooks manually ##
 
-You can run notebooks manually by:
-```bash
-jupyter lab notebooks
-```
-And then running the notebook of our choice. 
-However, keep in mind that notebooks depend on each other.
-In particular, select_samples notebook generates the data for all others.
+## partition module ##
+
+Key logic from the start until partitioning of the data according to sorted stratification
+
+
+Classes with data:
+* FeatureSelection - specifies which fields we want to select from ExpressionDataset's species, samples, genes
+* EncodedFeatures - class responsible for encoding of categorical features
+* ExpressionPartitions - data class with results of partitioning
+
+Transformers:
+* DataExtractor - transformer that get ExpressionDataset and extracts data from it according to FeatureSelection instruction
+* DataPartitioner - transformer that does sorted stratification
+
+## selection module ##
+
+This module is responsible for ShapBased selection
+
+Classes with data:
+* Fold - results of one Fold
+
+Auxilary classes:
+* ModelFactory - used by ShapSelector to initialize the model
+* Metrics - helper methods to deal with metrics
+
+Transformers:
+
+* ShapSelector - key transformer that does the learning
+
+
+
+## results module ##
+
+Module that contains final results
+
+* FeatureResults is a key class that contains selected features, folds as well as auxilary methods to plot and investigate results

@@ -249,10 +249,10 @@ class ExpressionDataset:
         :return:
         '''
         upd_expressions: pd.DataFrame = filter_fun(self.expressions.copy())
-        upd_genes = self.genes.loc[upd_expressions.columns]
-        upd_samples = self.samples.copy()
-        upd_samples.index = upd_expressions.index
-        return ExpressionDataset(self.name, upd_expressions, upd_samples, self.species, upd_genes, self.genes_meta)
+        upd_genes = self.genes.loc[upd_expressions.columns].copy()#.reindex(upd_expressions.columns)
+        upd_samples = self.samples.loc[upd_expressions.index].copy()#.reindex(upd_expressions.index)
+        upd_genes_meta = None if self.genes_meta is None else self.genes_meta.loc[upd_genes.index]
+        return ExpressionDataset(self.name, upd_expressions, upd_samples, self.species, upd_genes, upd_genes_meta)
 
 class SamplesIndexes:
     """
@@ -328,10 +328,10 @@ class GenesIndexes:
 
     def collect(self, filter_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> ExpressionDataset:
         upd_genes: pd.DataFrame = filter_fun(self.dataset.genes.copy())
-        genes = upd_genes.index.tolist()
-        upd_expressions = self.dataset.expressions[genes].copy()
-        upd_expressions.index = self.dataset.samples.index
-        return ExpressionDataset(self.dataset.name, upd_expressions, self.dataset.samples, self.dataset.species, upd_genes, self.dataset.genes_meta)
+        upd_expressions = self.dataset.expressions[upd_genes.index].copy()
+        upd_expressions = upd_expressions.loc[self.dataset.samples.index]
+        upd_genes_meta = None if self.dataset.genes_meta is None else self.dataset.genes_meta.loc[upd_genes.index]
+        return ExpressionDataset(self.dataset.name, upd_expressions, self.dataset.samples, self.dataset.species, upd_genes, upd_genes_meta)
 
     def filter(self, filter_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> ExpressionDataset:
         return self.collect(lambda df: self.dataset.genes[filter_fun(df)])

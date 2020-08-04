@@ -1,7 +1,7 @@
 number_of_bootstraps: 5 # this sets global setting of which how many bootstraps to use
 
 lgb_params:
-  "boosting_type": "gbdt"
+  "boosting_type": "dart"
   "objective": "regression"
   "metric":
     - l2

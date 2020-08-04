@@ -8,7 +8,6 @@ from functools import cached_property
 from sklearn.base import TransformerMixin
 from dataclasses import *
 from yspecies.partition import ExpressionPartitions
-from yspecies.results import FeatureResults
 from yspecies.utils import *
 
 
@@ -106,6 +105,8 @@ class Fold:
     @cached_property
     def shap_absolute_sum_non_zero(self):
         return self.shap_absolute_sum[self.shap_absolute_sum>0.0].sort_values(ascending=False)
+
+from yspecies.results import FeatureResults
 
 @dataclass
 class ShapSelector(TransformerMixin):

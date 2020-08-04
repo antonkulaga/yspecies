@@ -5,6 +5,7 @@ from dataclasses import *
 import shap
 
 import yspecies
+from yspecies.selection import Fold
 from yspecies.utils import *
 from yspecies.partition import ExpressionPartitions
 
@@ -16,10 +17,14 @@ class FeatureResults:
     '''
 
     selected: pd.DataFrame
-    folds: List['Fold']
+    folds: List[Fold]
     #shap_dataframes: List[pd.DataFrame]
     #metrics: pd.DataFrame
     partitions: ExpressionPartitions = field(default_factory=lambda: None)
+
+    @property
+    def head(self) -> Fold:
+        return self.folds[0]
 
     @cached_property
     def validation_species(self):
@@ -36,6 +41,7 @@ class FeatureResults:
 
     @cached_property
     def shap_sums(self):
+        #TODO: rewrite
         shap_positive_sums = pd.DataFrame(np.vstack([np.sum(more_or_value(v, 0.0, 0.0), axis=0) for v in self.shap_values]).T, index=self.partitions.X_T.index)
         shap_positive_sums = shap_positive_sums.rename(columns={c:f"plus_shap_{c}" for c in shap_positive_sums.columns})
         shap_negative_sums = pd.DataFrame(np.vstack([np.sum(less_or_value(v, 0.0, 0.0), axis=0) for v in self.shap_values]).T, index=self.partitions.X_T.index)
@@ -44,9 +50,37 @@ class FeatureResults:
         shap_sums = shap_positive_sums.join(shap_negative_sums)[sh_cols]
         return shap_sums
 
-    #@cached_property
-    #def stable_shap_dataframes(self) -> pd.DataFrame:
-        #return pd.DataFrame(data = self.stable_shap_values, index=self.sha)
+    @cached_property
+    def stable_shap_dataframe(self) -> pd.DataFrame:
+        return pd.DataFrame(data=self.stable_shap_values, index=self.head.shap_dataframe.index, columns=self.head.shap_dataframe.columns)
+
+    @cached_property
+    def stable_shap_dataframe_T(self) ->pd.DataFrame:
+        transposed = self.stable_shap_dataframe.T
+        transposed.index.name = "ensembl_id"
+        return transposed
+
+    def gene_details(self, symbol: str, samples: pd.DataFrame):
+        '''
+        Returns details of the genes (which shap values per each sample)
+        :param symbol:
+        :param samples:
+        :return:
+        '''
+        shaped = self.selected_extended[self.selected_extended["symbol"] == symbol]
+        id = shaped.index[0]
+        print(f"general info: {shaped.iloc[0][0:3]}")
+        shaped.index = ["shap_values"]
+        exp = self.partitions.X_T.loc[self.partitions.X_T.index == id]
+        exp.index = ["expressions"]
+        joined = pd.concat([exp, shaped], axis=0)
+        result = joined.T.join(samples)
+        result.index.name = "run"
+        return result
+
+    @cached_property
+    def selected_extended(self):
+        return self.selected.join(self.stable_shap_dataframe_T, how="left")
 
     @cached_property
     def stable_shap_values(self):
