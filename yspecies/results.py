@@ -151,4 +151,4 @@ class FeatureResults:
 
     @cached_property
     def selected_shap(self):
-        self.selected.join(self.shap_values.T.set_index())
+        return self.selected.join(self.shap_values.T.set_index())
