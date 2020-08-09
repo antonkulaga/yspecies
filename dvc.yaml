@@ -21,6 +21,16 @@ stages:
       - data/output/notebooks/select_samples.ipynb
   tune:
     cmd: python tune.py
+    params:
+      - parameters/tune.yaml: #not really using this yaml file yet
+        - name
+        - trials
+        - folds
+        - hold_outs
+        - threads
+        - species_in_validation
+        - not_validated_species
+        - repeats
     deps:
         - data/interim/selected/species.tsv
         - data/interim/selected/samples.tsv

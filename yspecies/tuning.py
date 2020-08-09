@@ -112,6 +112,7 @@ class GeneralTuner(TransformerMixin):
     n_trials: int = 10
     n_jobs: int = -1
     num_boost_round_train: int = 1000
+    repeats: int = 10
     study: Study = field(default_factory=lambda: optuna.create_study(direction='minimize'))
     parameters: Callable[[Trial], float] = None
     best_model: lgb.Booster = None
@@ -143,8 +144,11 @@ class GeneralTuner(TransformerMixin):
 
     def fit(self, partitions: ExpressionPartitions, y=None) -> dict:
         def objective(trial: Trial):
-            eval_hist = self.cv(partitions, trial)
-            return np.array(eval_hist[f"{self.to_optimize}-mean"]).min()
+            values: np.ndarray = np.zeros(self.repeats)
+            for i in range(0, self.repeats):
+                eval_hist = self.cv(partitions, trial)
+                values[i] = np.array(eval_hist[f"{self.to_optimize}-mean"]).min()
+            return np.average(values)
         self.study.optimize(objective, show_progress_bar=False, n_trials=self.n_trials, n_jobs=self.n_jobs, gc_after_trial=True)
         self.best_params = self.study.best_params
         print(f"best_params: {self.best_params}")

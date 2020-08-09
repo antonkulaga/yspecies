@@ -23,12 +23,19 @@ def get_local_path():
 @click.option('--hold_outs', default=1, help='Number of hold outs in cross-validation')
 @click.option('--threads', default=1, help="number of threads (1 by default). If you put -1 it will try to utilize all cores, however it can be dangerous memorywise")
 @click.option('--species_in_validation', default=3, help="species_in_validation")
-@click.option('--not_validated_species', default="Homo_sapiens", help="not_validated_species")
-def tune(name, trials, folds, hold_outs, threads, species_in_validation, not_validated_species):
+@click.option('--not_validated_species', default="", help="not_validated_species")
+@click.option('--repeats', default=10, help="number of times to repeat validation")
+@click.option("--loss", default="huber", help="loss type (huber, l1, l2), huber by default")
+def tune(name: str, trials: int, folds: int, hold_outs: int, threads: int, species_in_validation: int, not_validated_species: str, repeats: int):
     print(f"starting hyperparameters optimization script with {trials} trials, {folds} folds and {hold_outs} hold outs!")
     local = get_local_path()
 
-    not_validated_species = [not_validated_species] if type(not_validated_species) is str else not_validated_species
+    if not_validated_species is None or not_validated_species == "":
+        not_validated_species = []
+    elif type(not_validated_species) is str:
+        not_validated_species = [not_validated_species]
+    else:
+        not_validated_species = not_validated_species
 
     from yspecies.dataset import ExpressionDataset
     from yspecies.partition import DataPartitioner, FeatureSelection, DataExtractor
