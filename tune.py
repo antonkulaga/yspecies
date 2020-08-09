@@ -55,7 +55,7 @@ def tune():
         url=url
         #engine_kwargs={'check_same_thread': False}
     )
-    study = optuna.create_study(storage, study_name="naive_tuner", direction='minimize', load_if_exists=True)
+    study = optuna.create_study(storage, study_name="general_tuner", direction='minimize', load_if_exists=True)
     tuner = GeneralTuner(n_trials = n_trials, n_jobs = threads, study = study)
     best_parameters = tuner.fit(parts)
     print("======BEST=PARAMETERS===============")

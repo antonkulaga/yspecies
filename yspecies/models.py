@@ -57,7 +57,7 @@ class ModelFactory:
     })
 
 
-    def regression_model(self, X_train, X_test, y_train, y_test, categorical=None, params: dict = None) -> Booster:
+    def regression_model(self, X_train, X_test, y_train, y_test, categorical=None, num_boost_round:int = 500, params: dict = None) -> Booster:
         '''
         trains a regression model
         :param X_train:
@@ -75,9 +75,8 @@ class ModelFactory:
         evals_result = {}
         gbm = lgb.train(parameters,
                         lgb_train,
-                        num_boost_round=500,
+                        num_boost_round=num_boost_round,
                         valid_sets=lgb_eval,
                         evals_result=evals_result,
-                        verbose_eval=1000,
-                        early_stopping_rounds=7)
+                        verbose_eval=num_boost_round)
         return gbm

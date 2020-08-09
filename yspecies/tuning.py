@@ -111,6 +111,7 @@ class GeneralTuner(TransformerMixin):
     to_optimize: str = "huber"
     n_trials: int = 10
     n_jobs: int = -1
+    num_boost_round_train: int = 1000
     study: Study = field(default_factory=lambda: optuna.create_study(direction='minimize'))
     parameters: Callable[[Trial], float] = None
     best_model: lgb.Booster = None
@@ -152,7 +153,10 @@ class GeneralTuner(TransformerMixin):
     def transform(self, partitions: ExpressionPartitions) -> TuningResults:
         assert self.best_params is not None, "best params are not known - the model must be first fit!"
         if partitions.nhold_out > 0:
-            self.best_model = ModelFactory(self.best_params).regression_model(partitions.cv_merged_x, partitions.cv_merged_y, partitions.hold_out_x, partitions.hold_out_y, partitions.categorical_index)
+            factory = ModelFactory(parameters=self.best_params)
+            self.best_model = factory.regression_model(partitions.cv_merged_x,partitions.hold_out_x,
+                                                       partitions.cv_merged_y, partitions.hold_out_y,
+                                                       partitions.categorical_index, num_boost_round=self.num_boost_round_train)
             train_prediction = self.best_model.predict(partitions.cv_merged_x, num_iteration=self.best_model.best_iteration)
             test_prediction = self.best_model.predict(partitions.hold_out_x, num_iteration=self.best_model.best_iteration)
             train_metrics = Metrics.calculate(train_prediction, partitions.cv_merged_y)

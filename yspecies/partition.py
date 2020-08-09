@@ -130,7 +130,7 @@ class ExpressionPartitions:
     @cached_property
     def categorical_index(self):
         # temporaly making them auto
-        return "auto" #[ind for ind, c in enumerate(self.X.columns) if c in self.features.categorical]
+        return [ind for ind, c in enumerate(self.X.columns) if c in self.features.categorical]
 
     @property
     def folds(self):
