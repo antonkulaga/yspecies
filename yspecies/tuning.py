@@ -28,7 +28,8 @@ class SpecializedTuningResults:
 @dataclass
 class LightGBMTuner(TransformerMixin):
     '''
-    It is somewhat buggy, I had to get rid of it
+    It is somewhat buggy, see https://github.com/optuna/optuna/issues/1602#issuecomment-670937574
+    I had to switch to GeneralTuner while they are fixing it
     '''
 
     time_budget_seconds: int

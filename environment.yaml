@@ -24,7 +24,6 @@ dependencies:
   - pip
   - pip:
       - interpret>=0.2.0 #for experimental notebooks with explained boosting machines
-      -
 
 prefix: /data/miniconda3/envs/species
 

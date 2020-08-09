@@ -2,9 +2,8 @@ stages:
   select_samples:
     cmd: papermill -f parameters/select_samples.yaml  --progress-bar --report-mode
       notebooks/select_samples.ipynb data/output/notebooks/select_samples.ipynb
-    params:
-      - parameters/select_samples.yaml
     deps:
+      - parameters/select_samples.yaml
       - data/input/genes/by_animal_class
       - data/input/species.tsv
       - data/input/samples.tsv
@@ -21,8 +20,7 @@ stages:
       - data/output/counts/species_tissue_sample_count.tsv
       - data/output/notebooks/select_samples.ipynb
   tuning:
-    cmd: papermill -f parameters/tuning.yaml  --progress-bar --report-mode
-      notebooks/shap_tuning.ipynb data/output/notebooks/tuning.ipynb
+    cmd: echo "work in progress!" #papermill -f parameters/tuning.yaml  --progress-bar --report-mode notebooks/shap_tuning.ipynb data/output/notebooks/tuning.ipynb
     deps:
         - data/interim/selected/species.tsv
         - data/interim/selected/samples.tsv
@@ -32,15 +30,14 @@ stages:
     outs:
         #- data/output/notebooks/tuning.ipynb
         - data/output/optimization/study.sqlite
-    metrics:
-        - data/output/optimization/parameters.json
-        - data/output/optimization/results.json
+    #metrics:
+    #    - data/output/optimization/parameters.json
+    #    - data/output/optimization/results.json
   shap_selection:
     cmd: papermill -f parameters/shap_selection.yaml  --progress-bar --report-mode
       notebooks/shap_selection.ipynb data/output/notebooks/shap_selection.ipynb
-    params:
-      - parameters/shap_selection.yaml
     deps:
+      - parameters/shap_selection.yaml
       - data/interim/selected/species.tsv
       - data/interim/selected/samples.tsv
       - data/interim/selected/genes.tsv
@@ -51,9 +48,8 @@ stages:
   results_intersections:
     cmd: papermill -f parameters/results_intersections.yaml  --progress-bar --report-mode
       notebooks/results_intersections.ipynb data/output/notebooks/results_intersections.ipynb
-    params:
-      - parameters/results_intersections.yaml
     deps:
+      - parameters/results_intersections.yaml
       - data/output/external/causality
       - data/output/external/linear
       - data/output/external/shap

@@ -1,6 +1,6 @@
 package:
   name: yspecies
-  version: 0.2.0
+  version: 0.2.1
 channels:
   - conda-forge
   - bioconda

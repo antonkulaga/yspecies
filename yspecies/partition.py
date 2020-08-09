@@ -101,7 +101,7 @@ class DataExtractor(TransformerMixin):
 @dataclass
 class ExpressionPartitions:
     '''
-    Class is used as results of SortedStratification
+    Class is used as results of SortedStratification, it can also do hold-outs
     '''
 
     data: EncodedFeatures

@@ -76,6 +76,8 @@ results_intersections:
     md5: ccaa8c167006ee5e320c709bfcdc0d6d.dir
   - path: data/output/external/shap
     md5: fb35c5a65c49be61d7dacdc1fba3764b.dir
+  - path: parameters/results_intersections.yaml
+    md5: b1f4e5899bf2548de8a69cb96ce6f192
   outs:
   - path: data/output/intersections/genage_human_intersections.tsv
     md5: 7cd1e7ff10c8e35b41e884f355911437
@@ -103,12 +105,13 @@ shap_selection:
     md5: c370e925f56a0ed33b7dcb16553d4c39
   - path: data/interim/selected/species.tsv
     md5: 44e0c63a0d7749abcd43b3c1f92cc54b
+  - path: parameters/shap_selection.yaml
+    md5: 43734a0f6f4865a78d36e5ea7e773176
   outs:
   - path: data/output/notebooks/shap_selection.ipynb
     md5: c48cb96cd95b4936a3adb043018a6d8c
 tuning:
-  cmd: papermill -f parameters/tuning.yaml  --progress-bar --report-mode notebooks/shap_tuning.ipynb
-    data/output/notebooks/tuning.ipynb
+  cmd: echo "work in progress!"
   deps:
   - path: data/interim/selected/expressions.tsv
     md5: e8e8ea38f54eec4c9d51069d8cc2fde0
@@ -122,4 +125,4 @@ tuning:
     md5: 44e0c63a0d7749abcd43b3c1f92cc54b
   outs:
   - path: data/output/optimization/study.sqlite
-    md5: 4335f3aedca876cd7a68c3587cbaaa3c
+    md5: ef8116b0684832e6e11749edcd4e5cbf
