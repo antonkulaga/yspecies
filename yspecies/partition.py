@@ -159,15 +159,15 @@ class ExpressionPartitions:
         return list(itertools.chain(*[pindex for pindex in self.cv_indexes]))
 
     @cached_property
-    def cv_merged_x(self):
+    def cv_merged_x(self) -> pd.DataFrame:
         return self.X.iloc[self.cv_merged_index]
 
     @cached_property
-    def cv_merged_y(self):
+    def cv_merged_y(self) -> pd.DataFrame:
         return self.Y.iloc[self.cv_merged_index]
 
     @cached_property
-    def hold_out_x(self):
+    def hold_out_x(self) -> pd.DataFrame:
        assert self.n_hold_out > 0, "current n_hold_out is 0 partitions, so no hold out data can be extracted!"
        return self.X.iloc[self.hold_out_merged_index]
 
@@ -204,7 +204,7 @@ class ExpressionPartitions:
         :param i: number of parition
         :return: tuple with X and Y
         '''
-        return pd.concat(self.partitions_x[:i] + self.partitions_x[i + 1:]), np.concatenate(self.partitions_y[:i] + self.partitions_y[i + 1:], axis=0)
+        return pd.concat(self.partitions_x[:i] + self.partitions_x[i + 1:]), pd.concat(self.partitions_y[:i] + self.partitions_y[i + 1:])
 
     def __repr__(self):
         #to fix jupyter freeze (see https://github.com/ipython/ipython/issues/9771 )

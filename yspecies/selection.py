@@ -55,11 +55,9 @@ class ShapSelector(TransformerMixin):
         :return:
         '''
         self.models = []       
-        ifolds = partitions.n_folds
-        for i in range(0, ifolds):
+        for i in range(0, partitions.n_folds - partitions.n_hold_out):
             X_train, X_test, y_train, y_test = partitions.split_fold(i)
-            index_of_categorical  = [ind for ind, c in enumerate(X_train.columns) if c in partitions.features.categorical]
-            model = self.model_factory.regression_model(X_train, X_test, y_train, y_test, index_of_categorical)
+            model = self.model_factory.regression_model(X_train, X_test, y_train, y_test, partitions.categorical_index)
             self.models.append(model)
         return self
 
@@ -69,15 +67,15 @@ class ShapSelector(TransformerMixin):
         :param partitions:
         :return:
         '''
-        folds = partitions.n_folds
 
         #shap_values_out_of_fold = np.zeros()
         #interaction_values_out_of_fold = [[[0 for i in range(len(X.values[0]))] for i in range(len(X.values[0]))] for z in range(len(X))]
         #metrics = pd.DataFrame(np.zeros([folds, 3]), columns=["R^2", "MSE", "MAE"])
         #.sum(axis=0)
-        assert len(self.models) == folds, "for each bootstrap there should be a model"
+        assert len(self.models) == len(partitions.cv_indexes), "for each bootstrap there should be a model"
+
         result = []
-        for i in range(folds):
+        for i in range(0, len(partitions.cv_indexes)):
 
             X_test = partitions.partitions_x[i]
             y_test = partitions.partitions_y[i]
@@ -88,9 +86,10 @@ class ShapSelector(TransformerMixin):
 
             explainer = shap.TreeExplainer(model)
             shap_values = explainer.shap_values(partitions.X)
-            f = Fold(model.feature_importance(importance_type='gain'),
-                 pd.DataFrame(data = shap_values, index=partitions.X.index, columns=partitions.X.columns),
-                 Metrics.calculate(y_test, fold_predictions), partitions.validation_species[i]
+            f = Fold(feature_weights=model.feature_importance(importance_type='gain'),
+                     shap_dataframe=pd.DataFrame(data=shap_values, index=partitions.X.index, columns=partitions.X.columns),
+                     metrics=Metrics.calculate(y_test, fold_predictions),
+                     validation_species=partitions.validation_species[i]
             )
             result.append(f)
 

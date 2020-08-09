@@ -57,7 +57,7 @@ class ModelFactory:
     })
 
 
-    def regression_model(self, X_train, X_test, y_train, y_test, categorical=None, num_boost_round:int = 500, params: dict = None) -> Booster:
+    def regression_model(self, X_train, X_test, y_train, y_test, categorical=None, num_boost_round:int = 200, params: dict = None) -> Booster:
         '''
         trains a regression model
         :param X_train:
