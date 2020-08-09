@@ -26,7 +26,7 @@ class SpecializedTuningResults:
             print("    {}: {}".format(key, value))
 
 @dataclass
-class LightGBMTuner(TransformerMixin):
+class LightTuner(TransformerMixin):
     '''
     It is somewhat buggy, see https://github.com/optuna/optuna/issues/1602#issuecomment-670937574
     I had to switch to GeneralTuner while they are fixing it
@@ -45,7 +45,7 @@ class LightGBMTuner(TransformerMixin):
     def fit(self, partitions: ExpressionPartitions, y=None) -> Dict:
         cat = partitions.categorical_index if partitions.features.has_categorical else "auto"
         lgb_train = lgb.Dataset(partitions.X, partitions.Y, categorical_feature=cat, free_raw_data=False)
-        tuner = lgb.LightGBMTunerCV(
+        tuner = optuna.integration.lightgbm.LightGBMTunerCV(
             self.parameters, lgb_train, verbose_eval=self.num_boost_round, folds=partitions.folds,
             time_budget=self.time_budget_seconds,
             num_boost_round=self.num_boost_round

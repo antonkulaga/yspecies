@@ -1,9 +1,9 @@
 import sys
 from pathlib import Path
-import optuna
-import click
-from optuna import Trial
 
+import click
+import optuna
+from optuna import Trial
 from sklearn.pipeline import Pipeline
 
 
@@ -27,7 +27,10 @@ def get_local_path():
 @click.option('--species_in_validation', default=3, help="species_in_validation")
 @click.option('--not_validated_species', default="", help="not_validated_species")
 @click.option('--repeats', default=10, help="number of times to repeat validation")
-def tune(name: str, trials: int, loss: str, folds: int, hold_outs: int, threads: int, species_in_validation: int, not_validated_species: str, repeats: int):
+def tune(name: str, trials: int, loss: str,
+         folds: int, hold_outs: int, threads: int,
+         species_in_validation: int, not_validated_species: str,
+         repeats: int):
     print(f"starting hyperparameters optimization script with {trials} trials, {folds} folds and {hold_outs} hold outs!")
     local = get_local_path()
 
@@ -40,7 +43,7 @@ def tune(name: str, trials: int, loss: str, folds: int, hold_outs: int, threads:
 
     from yspecies.dataset import ExpressionDataset
     from yspecies.partition import DataPartitioner, FeatureSelection, DataExtractor
-    from yspecies.tuning import GeneralTuner, TuningResults
+    from yspecies.tuning import GeneralTuner
     from yspecies.workflow import Locations
     from yspecies.models import Metrics
 
@@ -105,5 +108,38 @@ def tune(name: str, trials: int, loss: str, folds: int, hold_outs: int, threads:
         metrics_df.index.name = "Dataset"
         metrics_df.to_csv(locations.metrics.lifespan / 'metrics.csv')
 
+def light_tune():
+
+    from yspecies.dataset import ExpressionDataset
+    from yspecies.partition import DataPartitioner, FeatureSelection, DataExtractor
+    from yspecies.workflow import Locations
+    from sklearn.pipeline import Pipeline
+    from yspecies.tuning import LightTuner
+
+    local = get_local_path()
+    from pathlib import Path
+    locations: Locations = Locations("./") if Path("./data").exists() else Locations("../")
+    data = ExpressionDataset.from_folder(locations.interim.selected)
+
+    selection = FeatureSelection(
+        samples = ["tissue","species"], #samples metadata to include
+        species =  [], #species metadata other then Y label to include
+        exclude_from_training = ["species"],  #exclude some fields from LightGBM training
+        to_predict = "lifespan", #column to predict
+        categorical = ["tissue"])
+    ext = Pipeline([
+        ('extractor', DataExtractor(selection)), # to extract the data required for ML from the dataset
+        ("partitioner", DataPartitioner(n_folds = 5, n_hold_out = 1, species_in_validation=3))
+    ])
+    parts = ext.fit_transform(data)
+    lt = LightTuner(200)
+    tn = lt.fit(parts)
+    print("!!!!!!!!!!")
+
+    print(lt.parameters)
+
 if __name__ == "__main__":
-    tune()
+    #tune()
+    light_tune()
+
+
