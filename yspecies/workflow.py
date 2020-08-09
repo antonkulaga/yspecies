@@ -101,6 +101,7 @@ class Locations:
             self.dir = base
             self.external = Locations.Output.External(self.dir / "external")
             self.intersections = self.dir / "intersections"
+            self.optimization = self.dir / "optimization"
 
 
     def __init__(self, base: str):

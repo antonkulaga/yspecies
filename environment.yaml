@@ -19,7 +19,8 @@ dependencies:
   - lightgbm>=2.3.1
   - statsmodels>=0.11.1
   - optuna>=2.0.0
-  #- yspecies=0.2.0
+  - click>=7.1.2
+  #- yspecies=0.2.1
   - pip
   - pip:
       - interpret>=0.2.0 #for experimental notebooks with explained boosting machines

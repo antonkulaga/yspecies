@@ -9,9 +9,11 @@ from yspecies.models import Metrics, ModelFactory
 from yspecies.partition import ExpressionPartitions
 from yspecies.utils import *
 
-
 @dataclass
-class TuningResultsSimple:
+class SpecializedTuningResults:
+    '''
+    Originally used with LightGBMTuner but than decided to get rid of it until bugs are fixed
+    '''
     best_params: dict
     best_score: float
 
@@ -24,7 +26,10 @@ class TuningResultsSimple:
             print("    {}: {}".format(key, value))
 
 @dataclass
-class Tuner(TransformerMixin):
+class LightGBMTuner(TransformerMixin):
+    '''
+    It is somewhat buggy, I had to get rid of it
+    '''
 
     time_budget_seconds: int
 
@@ -49,10 +54,14 @@ class Tuner(TransformerMixin):
         tuner.tune_min_data_in_leaf()
         tuner.tune_feature_fraction_stage2()
         tuner.run()
-        return TuningResultsSimple(tuner.best_params, tuner.best_score)
+        return SpecializedTuningResults(tuner.best_params, tuner.best_score)
 
 @dataclass
 class CrossValidator(TransformerMixin):
+    '''
+    Transformer that does cross-validation
+    '''
+
     num_boost_round: int = 500
     seed: int = 42
 
@@ -88,11 +97,12 @@ class CrossValidator(TransformerMixin):
 @dataclass
 class TuningResults:
     best_params: dict
-    train_metrics: yspecies.selection.Metrics = None
-    validation_metrics: yspecies.selection.Metrics = None
+    train_metrics: Metrics = None
+    validation_metrics: Metrics = None
 
 @dataclass
-class NaiveTuner(TransformerMixin):
+class GeneralTuner(TransformerMixin):
+
 
     num_boost_round: int = 500
     seed: int = 42
@@ -100,7 +110,7 @@ class NaiveTuner(TransformerMixin):
     to_optimize: str = "huber"
     n_trials: int = 10
     n_jobs: int = -1
-    study: Study = optuna.create_study(direction='minimize')
+    study: Study = field(default_factory=lambda: optuna.create_study(direction='minimize'))
     parameters: Callable[[Trial], float] = None
     best_model: lgb.Booster = None
     best_params: dict = None
@@ -114,11 +124,11 @@ class NaiveTuner(TransformerMixin):
         'lambda_l1': trial.suggest_uniform('lambda_l1', 0.01, 4.0),
         'lambda_l2': trial.suggest_uniform('lambda_l2', 0.01, 4.0),
         'max_leaves': trial.suggest_int("max_leaves", 15, 40),
-        'max_depth': trial.suggest_int('max_depth', 3, 6),
-        'feature_fraction': trial.suggest_uniform('feature_fraction', 0.5, 1.0),
-        'bagging_fraction': trial.suggest_uniform('bagging_fraction', 0.5, 1.0),
-        'learning_rate': trial.suggest_uniform('learning_rate', 0.05, 0.2),
-        'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 4, 8),
+        'max_depth': trial.suggest_int('max_depth', 3, 8),
+        'feature_fraction': trial.suggest_uniform('feature_fraction', 0.4, 1.0),
+        'bagging_fraction': trial.suggest_uniform('bagging_fraction', 0.4, 1.0),
+        'learning_rate': trial.suggest_uniform('learning_rate', 0.04, 0.2),
+        'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 4, 10),
         "verbose": -1
     }
 
@@ -139,13 +149,13 @@ class NaiveTuner(TransformerMixin):
         return self.best_params
 
     def transform(self, partitions: ExpressionPartitions) -> TuningResults:
-        assert self.best_model is not None, "the model should be first fit!"
+        assert self.best_params is not None, "best params are not known - the model must be first fit!"
         if partitions.nhold_out > 0:
-            self.best_model = ModelFactory(self.best_params).regression_model(partitions.cv_merged_x, partitions.cv_merged_y, partitions.categorical_index)
+            self.best_model = ModelFactory(self.best_params).regression_model(partitions.cv_merged_x, partitions.cv_merged_y, partitions.hold_out_x, partitions.hold_out_y, partitions.categorical_index)
             train_prediction = self.best_model.predict(partitions.cv_merged_x, num_iteration=self.best_model.best_iteration)
             test_prediction = self.best_model.predict(partitions.hold_out_x, num_iteration=self.best_model.best_iteration)
-            train_metrics = yspecies.selection.Metrics.calculate(train_prediction, partitions.cv_merged_y)
-            test_metrics = yspecies.selection.Metrics.calculate(test_prediction, partitions.hold_out_y)
+            train_metrics = Metrics.calculate(train_prediction, partitions.cv_merged_y)
+            test_metrics = Metrics.calculate(test_prediction, partitions.hold_out_y)
         else:
             train_metrics = None
             test_metrics = None
