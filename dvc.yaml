@@ -19,8 +19,8 @@ stages:
       - data/output/counts/tissue_sample_count.tsv
       - data/output/counts/species_tissue_sample_count.tsv
       - data/output/notebooks/select_samples.ipynb
-  tuning:
-    cmd: echo "work in progress!" #papermill -f parameters/tuning.yaml  --progress-bar --report-mode notebooks/shap_tuning.ipynb data/output/notebooks/tuning.ipynb
+  tune:
+    cmd: python tune.py
     deps:
         - data/interim/selected/species.tsv
         - data/interim/selected/samples.tsv
@@ -30,9 +30,9 @@ stages:
     outs:
         #- data/output/notebooks/tuning.ipynb
         - data/output/optimization/study.sqlite
-    #metrics:
-    #    - data/output/optimization/parameters.json
-    #    - data/output/optimization/results.json
+    metrics:
+        - data/output/optimization/parameters.json
+        - data/output/optimization/metrics.tsv
   shap_selection:
     cmd: papermill -f parameters/shap_selection.yaml  --progress-bar --report-mode
       notebooks/shap_selection.ipynb data/output/notebooks/shap_selection.ipynb

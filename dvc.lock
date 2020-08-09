@@ -126,3 +126,23 @@ tuning:
   outs:
   - path: data/output/optimization/study.sqlite
     md5: ef8116b0684832e6e11749edcd4e5cbf
+tune:
+  cmd: python tune.py
+  deps:
+  - path: data/interim/selected/expressions.tsv
+    md5: e8e8ea38f54eec4c9d51069d8cc2fde0
+  - path: data/interim/selected/genes.tsv
+    md5: 08f457c2517b3f601f5e58e3b1ec4ae0
+  - path: data/interim/selected/genes_meta.tsv
+    md5: 0387f21fcd4b287dc924432c8b90042d
+  - path: data/interim/selected/samples.tsv
+    md5: c370e925f56a0ed33b7dcb16553d4c39
+  - path: data/interim/selected/species.tsv
+    md5: 44e0c63a0d7749abcd43b3c1f92cc54b
+  outs:
+  - path: data/output/optimization/metrics.tsv
+    md5: c0a06dfbe5251941bb8d8f5f559d9de8
+  - path: data/output/optimization/parameters.json
+    md5: ee58f86dd5a7b0184e04b2a4665afdd7
+  - path: data/output/optimization/study.sqlite
+    md5: 018c700cbdfe97901c71750c3bc148be
