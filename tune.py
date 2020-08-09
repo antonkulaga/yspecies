@@ -79,7 +79,7 @@ def tune(name: str, trials: int, loss: str, folds: int, hold_outs: int, threads:
             'boosting_type': trial.suggest_categorical('boosting_type', ['dart', 'gbdt']),
             'lambda_l1': trial.suggest_uniform('lambda_l1', 0.01, 4.0),
             'lambda_l2': trial.suggest_uniform('lambda_l2', 0.01, 4.0),
-            'max_leaves': trial.suggest_int("max_leaves", 15, 40),
+            'max_leaves': trial.suggest_int("max_leaves", 15, 25),
             'max_depth': trial.suggest_int('max_depth', 3, 8),
             'feature_fraction': trial.suggest_uniform('feature_fraction', 0.4, 1.0),
             'bagging_fraction': trial.suggest_uniform('bagging_fraction', 0.4, 1.0),
@@ -102,6 +102,7 @@ def tune(name: str, trials: int, loss: str, folds: int, hold_outs: int, threads:
     if results.train_metrics is not None and results.validation_metrics is not None:
         metrics_df = Metrics.combine([results.train_metrics, results.validation_metrics])
         metrics_df = metrics_df.rename(index={0: "train", 1: "test"})
+        metrics_df.index.name = "Dataset"
         metrics_df.to_csv(locations.metrics.lifespan / 'metrics.csv')
 
 if __name__ == "__main__":

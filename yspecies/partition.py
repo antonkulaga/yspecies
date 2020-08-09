@@ -144,7 +144,7 @@ class ExpressionPartitions:
 
     @cached_property
     def n_folds(self) -> int:
-        len(self.indexes)
+        return len(self.indexes)
 
     @cached_property
     def partitions_x(self):
