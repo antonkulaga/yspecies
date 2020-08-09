@@ -38,11 +38,10 @@ stages:
         - data/interim/selected/expressions.tsv
         - data/interim/selected/genes_meta.tsv
     outs:
-        #- data/output/notebooks/tuning.ipynb
-        - data/output/optimization/study.sqlite
+        - data/metrics/lifespan/study.sqlite
     metrics:
-        - data/output/optimization/parameters.json
-        - data/output/optimization/metrics.tsv
+        - data/metrics/lifespan/parameters.json
+        - data/metrics/lifespan/metrics.csv
   shap_selection:
     cmd: papermill -f parameters/shap_selection.yaml  --progress-bar --report-mode
       notebooks/shap_selection.ipynb data/output/notebooks/shap_selection.ipynb

@@ -139,10 +139,20 @@ tune:
     md5: c370e925f56a0ed33b7dcb16553d4c39
   - path: data/interim/selected/species.tsv
     md5: 44e0c63a0d7749abcd43b3c1f92cc54b
+  params:
+    parameters/tune.yaml:
+      folds: 5
+      hold_outs: 1
+      name: general_tuner
+      not_validated_species: ''
+      repeats: 10
+      species_in_validation: 3
+      threads: 1
+      trials: 10
   outs:
-  - path: data/output/optimization/metrics.tsv
-    md5: c0a06dfbe5251941bb8d8f5f559d9de8
-  - path: data/output/optimization/parameters.json
-    md5: ee58f86dd5a7b0184e04b2a4665afdd7
-  - path: data/output/optimization/study.sqlite
-    md5: 018c700cbdfe97901c71750c3bc148be
+  - path: data/metrics/lifespan/metrics.csv
+    md5: 79b0c703e95be0e1eba09b8179f9b032
+  - path: data/metrics/lifespan/parameters.json
+    md5: 39716c866e5d47b2a912cb022acfccf0
+  - path: data/metrics/lifespan/study.sqlite
+    md5: 81233412a84c04272e17aea6a1cb2e36

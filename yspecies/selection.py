@@ -55,8 +55,8 @@ class ShapSelector(TransformerMixin):
         :return:
         '''
         self.models = []       
-        ifolds = partitions.nfold
-        for i in range(ifolds):
+        ifolds = partitions.n_folds
+        for i in range(0, ifolds):
             X_train, X_test, y_train, y_test = partitions.split_fold(i)
             index_of_categorical  = [ind for ind, c in enumerate(X_train.columns) if c in partitions.features.categorical]
             model = self.model_factory.regression_model(X_train, X_test, y_train, y_test, index_of_categorical)
@@ -69,7 +69,7 @@ class ShapSelector(TransformerMixin):
         :param partitions:
         :return:
         '''
-        folds = partitions.nfold
+        folds = partitions.n_folds
 
         #shap_values_out_of_fold = np.zeros()
         #interaction_values_out_of_fold = [[[0 for i in range(len(X.values[0]))] for i in range(len(X.values[0]))] for z in range(len(X))]
@@ -108,7 +108,7 @@ class ShapSelector(TransformerMixin):
         #mean_metrics = metrics.mean(axis=0)
         #print("MEAN metrics = "+str(mean_metrics))
         shap_values_transposed = mean_shap_values.T
-        fold_number = partitions.nfold
+        fold_number = partitions.n_folds
 
         X_transposed = partitions.X_T.values
 

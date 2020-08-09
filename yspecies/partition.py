@@ -109,15 +109,15 @@ class ExpressionPartitions:
     Y: pd.DataFrame
     indexes: List[List[int]]
     validation_species: List[List[str]]
-    nhold_out: int = 0 #how many partitions we hold for checking validation
+    n_hold_out: int = 0 #how many partitions we hold for checking validation
 
     @cached_property
     def cv_indexes(self):
-        return self.indexes[0:(len(self.indexes)-self.nhold_out)]
+        return self.indexes[0:(len(self.indexes)-self.n_hold_out)]
 
     @cached_property
     def hold_out_partition_indexes(self) -> List[List[int]]:
-        return self.indexes[(len(self.indexes)-self.nhold_out):len(self.indexes)]
+        return self.indexes[(len(self.indexes)-self.n_hold_out):len(self.indexes)]
 
     @cached_property
     def hold_out_merged_index(self) -> List[int]:
@@ -137,9 +137,14 @@ class ExpressionPartitions:
         for ind in self.indexes:
             yield (ind,ind)
 
+    @property
+    def cv_folds(self):
+        for ind in self.cv_indexes:
+            yield (ind,ind)
+
     @cached_property
-    def nfold(self) -> int:
-        len(self.partitions_x)
+    def n_folds(self) -> int:
+        len(self.indexes)
 
     @cached_property
     def partitions_x(self):
@@ -163,12 +168,12 @@ class ExpressionPartitions:
 
     @cached_property
     def hold_out_x(self):
-       assert self.nhold_out > 0, "current nhold_out is 0 partitions, so no hold out data can be extracted!"
+       assert self.n_hold_out > 0, "current n_hold_out is 0 partitions, so no hold out data can be extracted!"
        return self.X.iloc[self.hold_out_merged_index]
 
     @cached_property
     def hold_out_y(self):
-        assert self.nhold_out > 0, "current nhold_out is 0 partitions, so no hold out data can be extracted!"
+        assert self.n_hold_out > 0, "current n_hold_out is 0 partitions, so no hold out data can be extracted!"
         return self.Y.iloc[self.hold_out_merged_index]
 
     @cached_property
@@ -219,10 +224,10 @@ class DataPartitioner(TransformerMixin):
     '''
     Partitions the data according to sorted stratification
     '''
-    nfolds: int
+    n_folds: int
     species_in_validation: int = 2 #exclude species to validate them
     not_validated_species: List[str] = field(default_factory=lambda: ["Homo sapiens"])
-    nhold_out: int = 0
+    n_hold_out: int = 0
 
     def fit(self, X, y=None) -> 'DataExtractor':
         return self
@@ -235,7 +240,7 @@ class DataPartitioner(TransformerMixin):
         :return: partitions
         '''
         assert isinstance(selected.samples, pd.DataFrame), "Should contain extracted Pandas DataFrame with X and Y"
-        return self.sorted_stratification(selected, self.nfolds)
+        return self.sorted_stratification(selected, self.n_folds)
 
     def sorted_stratification(self, encodedFeatures: EncodedFeatures, k: int) -> ExpressionPartitions:
         '''
@@ -304,4 +309,4 @@ class DataPartitioner(TransformerMixin):
                     else:
                         partition_indexes[i] = list(set(partition_indexes[i]).difference(set(k_sets_indexes[j])))
 
-        return ExpressionPartitions(encodedFeatures, X_sorted, Y_sorted,  partition_indexes, k_sets_of_species, nhold_out=self.nhold_out)
+        return ExpressionPartitions(encodedFeatures, X_sorted, Y_sorted, partition_indexes, k_sets_of_species, n_hold_out=self.n_hold_out)

@@ -101,14 +101,15 @@ class TuningResults:
     train_metrics: Metrics = None
     validation_metrics: Metrics = None
 
+
 @dataclass
 class GeneralTuner(TransformerMixin):
-
 
     num_boost_round: int = 500
     seed: int = 42
     #time_budget_seconds: int = 600
     to_optimize: str = "huber"
+    direction: str = "minimize"
     n_trials: int = 10
     n_jobs: int = -1
     num_boost_round_train: int = 1000
@@ -136,18 +137,17 @@ class GeneralTuner(TransformerMixin):
     }
 
 
-
     def cv(self, partitions: ExpressionPartitions, trial: Trial) -> Dict:
         params = self.default_parameters(trial) if self.parameters is None else self.parameters(trial)
-        cross = CrossValidator(self.num_boost_round,self.seed,  parameters = params)
+        cross = CrossValidator(self.num_boost_round, self.seed, parameters=params)
         return cross.fit(partitions)
 
     def fit(self, partitions: ExpressionPartitions, y=None) -> dict:
         def objective(trial: Trial):
             values: np.ndarray = np.zeros(self.repeats)
-            for i in range(0, self.repeats):
-                eval_hist = self.cv(partitions, trial)
-                values[i] = np.array(eval_hist[f"{self.to_optimize}-mean"]).min()
+            #for i in range(0, self.repeats):
+            eval_hist = self.cv(partitions, trial)
+            #    values[i] = np.array(eval_hist[f"{self.to_optimize}-mean"]).min()
             return np.average(values)
         self.study.optimize(objective, show_progress_bar=False, n_trials=self.n_trials, n_jobs=self.n_jobs, gc_after_trial=True)
         self.best_params = self.study.best_params
@@ -156,7 +156,7 @@ class GeneralTuner(TransformerMixin):
 
     def transform(self, partitions: ExpressionPartitions) -> TuningResults:
         assert self.best_params is not None, "best params are not known - the model must be first fit!"
-        if partitions.nhold_out > 0:
+        if partitions.n_hold_out > 0:
             factory = ModelFactory(parameters=self.best_params)
             self.best_model = factory.regression_model(partitions.cv_merged_x,partitions.hold_out_x,
                                                        partitions.cv_merged_y, partitions.hold_out_y,
@@ -169,5 +169,3 @@ class GeneralTuner(TransformerMixin):
             train_metrics = None
             test_metrics = None
         return TuningResults(self.study.best_params, train_metrics, test_metrics)
-
-

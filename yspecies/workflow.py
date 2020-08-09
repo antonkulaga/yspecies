@@ -88,6 +88,11 @@ class Locations:
             self.dir = base
             self.selected = self.dir / "selected"
 
+    class Metrics:
+        def __init__(self, base: Path):
+            self.dir = base
+            self.lifespan = self.dir / "lifespan"
+
     class Output:
 
         class External:
@@ -110,5 +115,6 @@ class Locations:
         self.dir: Path = self.base / "data"
         self.input: Locations.Input = Locations.Input(self.dir / "input")
         self.interim: Locations.Interim = Locations.Interim(self.dir / "interim")
+        self.metrics: Locations.Metrics = Locations.Metrics(self.dir / "metrics")
         self.output: Locations.Output =  Locations.Output(self.dir / "output")
 
