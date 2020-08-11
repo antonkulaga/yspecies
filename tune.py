@@ -5,6 +5,8 @@ import click
 import optuna
 from optuna import Trial
 from sklearn.pipeline import Pipeline
+from yspecies.config import Locations
+from yspecies.preprocess import FeatureSelection, EncodedFeatures, DataExtractor
 
 
 def get_local_path():
@@ -42,9 +44,8 @@ def tune(name: str, trials: int, loss: str,
         not_validated_species = not_validated_species
 
     from yspecies.dataset import ExpressionDataset
-    from yspecies.partition import DataPartitioner, FeatureSelection, DataExtractor
+    from yspecies.partition import DataPartitioner
     from yspecies.tuning import GeneralTuner
-    from yspecies.workflow import Locations
     from yspecies.models import Metrics
 
     locations: Locations = Locations("./") if Path("./data").exists() else Locations("../")
@@ -111,8 +112,9 @@ def tune(name: str, trials: int, loss: str,
 def light_tune():
 
     from yspecies.dataset import ExpressionDataset
-    from yspecies.partition import DataPartitioner, FeatureSelection, DataExtractor
-    from yspecies.workflow import Locations
+    from yspecies.config import Locations
+    from yspecies.preprocess import FeatureSelection, EncodedFeatures, DataExtractor
+    from yspecies.partition import DataPartitioner
     from sklearn.pipeline import Pipeline
     from yspecies.tuning import LightTuner
 
@@ -131,11 +133,11 @@ def light_tune():
         ('extractor', DataExtractor(selection)), # to extract the data required for ML from the dataset
         ("partitioner", DataPartitioner(n_folds = 5, n_hold_out = 1, species_in_validation=3))
     ])
+
     parts = ext.fit_transform(data)
     lt = LightTuner(200)
     tn = lt.fit(parts)
-    print("!!!!!!!!!!")
-
+    print("parameters:")
     print(lt.parameters)
 
 if __name__ == "__main__":

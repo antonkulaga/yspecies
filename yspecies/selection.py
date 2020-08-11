@@ -1,17 +1,12 @@
-import lightgbm as lgb
 import shap
-from lightgbm import Booster
 from scipy.stats import kendalltau
-from sklearn.metrics import *
-from functools import cached_property
-
 from sklearn.base import TransformerMixin
-from dataclasses import *
-from yspecies.partition import ExpressionPartitions
-from yspecies.utils import *
-from yspecies.models import  *
 
-@dataclass
+from yspecies.models import *
+from yspecies.partition import ExpressionPartitions
+
+
+@dataclass(frozen=True)
 class Fold:
 
     '''
@@ -72,10 +67,10 @@ class ShapSelector(TransformerMixin):
         #interaction_values_out_of_fold = [[[0 for i in range(len(X.values[0]))] for i in range(len(X.values[0]))] for z in range(len(X))]
         #metrics = pd.DataFrame(np.zeros([folds, 3]), columns=["R^2", "MSE", "MAE"])
         #.sum(axis=0)
-        assert len(self.models) == len(partitions.cv_indexes), "for each bootstrap there should be a model"
+        assert len(self.models) == partitions.n_cv_folds, "for each bootstrap there should be a model"
 
         result = []
-        for i in range(0, len(partitions.cv_indexes)):
+        for i in range(0, partitions.n_cv_folds):
 
             X_test = partitions.partitions_x[i]
             y_test = partitions.partitions_y[i]
@@ -107,7 +102,7 @@ class ShapSelector(TransformerMixin):
         #mean_metrics = metrics.mean(axis=0)
         #print("MEAN metrics = "+str(mean_metrics))
         shap_values_transposed = mean_shap_values.T
-        fold_number = partitions.n_folds
+        fold_number = partitions.n_cv_folds
 
         X_transposed = partitions.X_T.values
 
@@ -124,7 +119,6 @@ class ShapSelector(TransformerMixin):
                 cols.append(weight)
                 if weight!= 0:
                     non_zero_cols += 1
-
             if non_zero_cols == fold_number:
                 if 'ENSG' in partitions.X.columns[i]: #TODO: change from hard-coded ENSG checkup to something more meaningful
                     output_features_by_weight.append({

@@ -8,7 +8,7 @@ from sklearn.metrics import *
 from yspecies.utils import *
 
 
-@dataclass
+@dataclass(frozen=True)
 class Metrics:
 
     '''
@@ -38,7 +38,7 @@ class Metrics:
         return np.array([self.R2, self.MSE, self.MAE])
 
 
-@dataclass
+@dataclass(frozen=True)
 class ModelFactory:
 
     parameters: Dict = field(default_factory=lambda: {

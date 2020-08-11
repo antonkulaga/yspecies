@@ -10,16 +10,14 @@ from yspecies.utils import *
 from yspecies.partition import ExpressionPartitions
 
 
-@dataclass
+@dataclass(frozen=True)
 class FeatureResults:
+
     '''
     Feature results class
     '''
-
     selected: pd.DataFrame
     folds: List[Fold]
-    #shap_dataframes: List[pd.DataFrame]
-    #metrics: pd.DataFrame
     partitions: ExpressionPartitions = field(default_factory=lambda: None)
 
     @property
@@ -152,3 +150,18 @@ class FeatureResults:
     @cached_property
     def selected_shap(self):
         return self.selected.join(self.shap_values.T.set_index())
+
+@dataclass
+class FeatureSummary:
+    results: List[FeatureResults]
+    #intersection_percentage: float = 1.0
+
+    @cached_property
+    def selected(self):
+        result = self.results[0].selected[["symbol"]]
+        for i, r in enumerate(self.results):
+            c_shap = f"shap_{i}"
+            c_tau = f"kendall_tau_{i}"
+            res = r.selected.rename(columns={"shap_absolute_sum_to_lifespan": c_shap, "kendall_tau_to_lifespan": c_tau})
+            result = result.join(res[[c_shap, c_tau]], how="inner")
+        return result

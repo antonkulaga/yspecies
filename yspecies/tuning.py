@@ -9,7 +9,7 @@ from yspecies.models import Metrics, ModelFactory
 from yspecies.partition import ExpressionPartitions
 from yspecies.utils import *
 
-@dataclass
+@dataclass(frozen=True)
 class SpecializedTuningResults:
     '''
     Originally used with LightGBMTuner but than decided to get rid of it until bugs are fixed
@@ -57,7 +57,7 @@ class LightTuner(TransformerMixin):
         tuner.run()
         return SpecializedTuningResults(tuner.best_params, tuner.best_score)
 
-@dataclass
+@dataclass(frozen=True)
 class CrossValidator(TransformerMixin):
     '''
     Transformer that does cross-validation
@@ -95,14 +95,13 @@ class CrossValidator(TransformerMixin):
                            num_boost_round=self.num_boost_round)
         return eval_hist
 
-@dataclass
+@dataclass(frozen=True)
 class TuningResults:
     best_params: dict
     train_metrics: Metrics = None
     validation_metrics: Metrics = None
 
-
-@dataclass
+@dataclass(frozen=True)
 class GeneralTuner(TransformerMixin):
 
     num_boost_round: int = 500
