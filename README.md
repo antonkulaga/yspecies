@@ -18,11 +18,19 @@ Each stage runs (and source controls input-outputs) corresponding notebooks usin
 
 Temporaly some classes are copy-pasted from xspecies repository to make notebooks works
 
+
+Project environment
+-------------------
+To create environment you can do:
+```bash
+conda env create --file environment.yaml
+```
+
 yspecies package
 ----------------
 
-The code in yspecies folder is a conda package that is used inside notebooks
-The package can be installed from conda https://anaconda.org/antonkulaga/yspecies
+The code in yspecies folder is a conda package that is used inside notebooks.
+The package is included in environment.yaml but you can also install it separately from conda https://anaconda.org/antonkulaga/yspecies
 ```bash
 conda install -c antonkulaga yspecies
 ```

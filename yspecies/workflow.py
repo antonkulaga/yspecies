@@ -1,113 +1,57 @@
-"""
+from dataclasses import *
+from functools import cached_property
 
-Classes that are helpers for the yspecies workflows
-Classes:
-    Enums
-    Locations
-"""
+from sklearn.base import TransformerMixin
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import LabelEncoder
 
-from enum import Enum, auto
-class Normalize(Enum):
-    log2 = "log2"
-    standardize = "standardize"
-    clr = "clr"
-
-class AnimalClass(Enum):
-    Mammalia = "Mammalia"
-    mammals = "Mammalia"
-    Aves = "Aves"
-    birds = "Aves"
-    Reptilia = "Reptilia"
-    reptiles = "Reptilia"
-    Coelacanthi = "Coelacanthi"
-    Teleostei = "Teleostei"
-    bone_fish = "Teleostei"
-
-    @staticmethod
-    def tsv():
-        return [cl.name.capitalize()+".tsv" for cl in AnimalClass]
-
-class Orthology(Enum):
-    one2one = "one2one"
-    one2many = "one2many"
-    one2many_directed = "one2many_directed"
-    one2oneplus_directed = "one2oneplus_directed"
-    many2many = "many2many"
-    all = "all"
-
-class CleaningTarget(Enum):
-    expressions = "expressions"
-    genes = "genes"
-
-from pathlib import Path
+from yspecies.dataset import ExpressionDataset
+from yspecies.utils import *
 
 
-class Locations:
+@dataclass(frozen=True)
+class Collect(TransformerMixin):
+    '''
+    turns a filtered (by filter) collection into one value
+    '''
+    fold: Callable[[Union[Iterable, Generator]], Any]
+    filter: Callable[[Any], bool] = field(default_factory=lambda x: True) #just does nothing by default
 
-    class Genes:
-        def __init__(self, base: Path):
-            self.dir: Path = base
-            self.genes = self.dir
-            self.by_class = self.dir / "by_animal_class"
-            self.all = self.dir / "all"
-            self.genes_meta = self.dir / "reference_genes.tsv"
+    def fit(self, X, y=None):
+        return self
 
-    class Expressions:
+    def transform(self, data: Iterable) -> Any:
+        return self.fold([d for d in data if self.filter(d)])
 
-        def __init__(self, base: Path):
-            self.dir = base
-            self.expressions = self.dir
-            self.by_class: Path = self.dir / "by_animal_class"
+@dataclass(frozen=True)
+class Repeat:
+    transformer: Union[TransformerMixin, Pipeline]
+    repeats: Union[Union[Iterable, Generator], int]
+    map: Callable[[Any, Any], Any] = field(default_factory=lambda: lambda x, i: x) #transforms data before passing it to the transformer
 
-    class Input:
+    @cached_property
+    def iterable(self) -> Iterable:
+        return self.repeats if (isinstance(self.repeats, Iterable) or isinstance(self.repeats, Generator)) else range(0, self.repeats)
 
-        class Annotations:
-            class Genage:
-                def __init__(self, base: Path):
-                    self.dir = base
-                    self.orthologs = Locations.Genes(base / "genage_orthologs")
-                    self.conversion = self.dir / "genage_conversion.tsv"
-                    self.human = self.dir / "genage_human.tsv"
-                    self.models = self.dir / "genage_models.tsv"
+    def fit(self, X, y=None):
+        return self
 
-            def __init__(self, base: Path):
-                self.dir = base
-                self.genage = Locations.Input.Annotations.Genage(self.dir / "genage")
-
-        def __init__(self, base: Path):
-            self.dir = base
-            self.intput = self.dir
-            self.genes: Locations.Genes = Locations.Genes(self.dir / "genes")
-            self.expressions: Locations.Expressions = Locations.Expressions(self.dir / "expressions")
-            self.species = self.dir / "species.tsv"
-            self.samples = self.dir / "samples.tsv"
-            self.annotations = Locations.Input.Annotations(self.dir / "annotations")
-
-    class Interim:
-        def __init__(self, base: Path):
-            self.dir = base
-            self.selected = self.dir / "selected"
-
-    class Output:
-
-        class External:
-            def __init__(self, base: Path):
-                self.dir: Path = base
-                self.linear = self.dir / "linear"
-                self.shap = self.dir / "shap"
-                self.causal = self.dir / "causal"
-
-        def __init__(self, base: Path):
-            self.dir = base
-            self.external = Locations.Output.External(self.dir / "external")
-            self.intersections = self.dir / "intersections"
+    def transform(self, data: Any):
+        return [self.transformer.fit_transform(self.map(data, i)) for i in self.iterable]
 
 
-    def __init__(self, base: str):
-        self.base: Path = Path(base)
-        self.data: Path = self.base / "data"
-        self.dir: Path = self.base / "data"
-        self.input: Locations.Input = Locations.Input(self.dir / "input")
-        self.interim: Locations.Interim = Locations.Interim(self.dir / "interim")
-        self.output: Locations.Output =  Locations.Output(self.dir / "output")
+@dataclass(frozen=True)
+class TupleWith(TransformerMixin):
+    """
+    Concatenates (in tuple) the results of Transformers or parameters plus transformers
+    """
+    parameters: Union[Union[TransformerMixin, Pipeline], Any]
 
+    def fit(self, X, y = None):
+        return self
+
+    def transform(self, data: Any) -> Tuple:
+        if isinstance(self.parameters, TransformerMixin) or isinstance(self.parameters, Pipeline):
+            return (data, self.parameters.fit_transform(data))
+        else:
+            return (data,) + (self.parameters if isinstance(self.parameters, Tuple) else (self.parameters, ))

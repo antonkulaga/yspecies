@@ -1,0 +1,8 @@
+name: "general_tuner"
+trials: 10
+folds: 5
+hold_outs: 1
+threads: 1
+species_in_validation: 3
+not_validated_species: ""
+repeats: 10
