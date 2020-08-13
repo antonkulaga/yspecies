@@ -10,10 +10,15 @@ from yspecies.utils import *
 
 @dataclass(frozen=True)
 class SplitReduce(TransformerMixin):
+    '''
+    This class is a bit complicated,
+    it is needed when you want  to split parameters in several pieces and send them to different pipelines/transformers
+    and then assemble (reduce) result together.
+    '''
 
-    outputs: List[Union[TransformerMixin, Pipeline]]
-    split: Callable[[Any], List[Any]]
-    reduce: Callable[[Any, List[Any]], Any] #gets original input and outputs of all transformers
+    outputs: List[Union[TransformerMixin, Pipeline]] #transformers/pipelines to which we split the output
+    split: Callable[[Any], List[Any]] #function that distributes/splits the outputs, should return a list with the same dimension as outputs field
+    reduce: Callable[[Any, List[Any]], Any] # when
 
     def fit(self, X, y=None):
         return self
