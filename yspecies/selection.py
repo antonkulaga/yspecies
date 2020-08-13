@@ -1,8 +1,17 @@
-import shap
-from scipy.stats import kendalltau
+from functools import cached_property
+from dataclasses import *
+from typing import *
+import numpy as np
+import pandas as pd
 from sklearn.base import TransformerMixin
+from scipy.stats import kendalltau
 
-from yspecies.models import *
+import lightgbm as lgb
+from lightgbm import Booster
+from lightgbm import Booster
+import shap
+
+from yspecies.models import Metrics
 from yspecies.partition import ExpressionPartitions
 
 
@@ -33,28 +42,54 @@ from yspecies.results import FeatureResults
 
 @dataclass
 class ShapSelector(TransformerMixin):
-    '''
-    Class that gets partioner and model factory and selects best features.
-    TODO: rewrite everything to Pipeline
-    '''
 
-    model_factory: ModelFactory
-    models: List = field(default_factory=lambda: [])
     select_by_gain: bool = True #if we should use gain for selection, otherwise uses median Shap Values
+    early_stopping_rounds: int = 10
+    models: List = field(default_factory=lambda: [])
 
-    def fit(self, partitions: ExpressionPartitions, y=None) -> 'DataExtractor':
+    def fit(self, to_fit: Tuple[ExpressionPartitions, Dict], y=None) -> 'DataExtractor':
         '''
         trains models on fig stage
         :param partitions:
         :param y:
         :return:
         '''
+        partitions, parameters = to_fit
         self.models = []       
         for i in range(0, partitions.n_folds - partitions.n_hold_out):
             X_train, X_test, y_train, y_test = partitions.split_fold(i)
-            model = self.model_factory.regression_model(X_train, X_test, y_train, y_test, partitions.categorical_index)
+            model = self.regression_model(X_train, X_test, y_train, y_test, parameters, partitions.categorical_index)
             self.models.append(model)
         return self
+
+
+    def regression_model(self, X_train, X_test, y_train, y_test, parameters: Dict, categorical=None, num_boost_round: int = 200) -> Booster:
+        '''
+        trains a regression model
+        :param X_train:
+        :param X_test:
+        :param y_train:
+        :param y_test:
+        :param categorical:
+        :param parameters:
+        :return:
+        '''
+        cat = categorical if len(categorical) >0 else "auto"
+        lgb_train = lgb.Dataset(X_train, y_train, categorical_feature=cat)
+        lgb_eval = lgb.Dataset(X_test, y_test, reference=lgb_train)
+        evals_result = {}
+
+        stopping_callback = lgb.early_stopping(self.early_stopping_rounds)
+
+        gbm = lgb.train(parameters,
+                        lgb_train,
+                        num_boost_round=num_boost_round,
+                        valid_sets=lgb_eval,
+                        evals_result=evals_result,
+                        verbose_eval=num_boost_round,
+                        callbacks=[stopping_callback]
+                        )
+        return gbm
 
     def compute_folds(self, partitions: ExpressionPartitions) -> List[Fold]:
         '''
@@ -93,8 +128,9 @@ class ShapSelector(TransformerMixin):
             #interaction_values_out_of_fold = np.add(interaction_values_out_of_fold, interaction_values)
         return result
 
-    def transform(self, partitions: ExpressionPartitions) -> FeatureResults:
+    def transform(self, to_select_from) -> FeatureResults:
 
+        partitions, parameters = to_select_from
         folds = self.compute_folds(partitions)
         fold_shap_values = [f.shap_values for f in folds]
         # calculate shap values out of fold

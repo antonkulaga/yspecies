@@ -158,10 +158,12 @@ class FeatureSummary:
 
     @cached_property
     def selected(self):
-        result = self.results[0].selected[["symbol"]]
+        result: pd.DataFrame = self.results[0].selected[["symbol"]]
+        #prefix = if result.columns
+        pref: str = "gain" if len([c for c in result.selected.columns if "gain" in c])>0 else "shap"
         for i, r in enumerate(self.results):
-            c_shap = f"shap_{i}"
+            c_shap = f"{pref}_{i}"
             c_tau = f"kendall_tau_{i}"
-            res = r.selected.rename(columns={"shap_absolute_sum_to_lifespan": c_shap, "kendall_tau_to_lifespan": c_tau})
+            res = r.selected.rename(columns={f"{pref}_absolute_sum_to_lifespan": c_shap, "kendall_tau_to_lifespan": c_tau})
             result = result.join(res[[c_shap, c_tau]], how="inner")
         return result

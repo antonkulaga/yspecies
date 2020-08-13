@@ -1,13 +1,15 @@
-from dataclasses import *
 import lightgbm as lgb
 import optuna
 from optuna import Study, Trial
 from sklearn.base import TransformerMixin
+from dataclasses import *
 
-import yspecies
-from yspecies.models import Metrics, ModelFactory
+from sklearn.pipeline import Pipeline
+
+from yspecies.models import Metrics, CrossValidator, ResultsCV
 from yspecies.partition import ExpressionPartitions
 from yspecies.utils import *
+
 
 @dataclass(frozen=True)
 class SpecializedTuningResults:
@@ -40,6 +42,7 @@ class LightTuner(TransformerMixin):
         'metric': 'huber'
     })
     num_boost_round: int = 500
+    early_stopping_rounds = 5
     seed: int = 42
 
     def fit(self, partitions: ExpressionPartitions, y=None) -> Dict:
@@ -48,7 +51,8 @@ class LightTuner(TransformerMixin):
         tuner = optuna.integration.lightgbm.LightGBMTunerCV(
             self.parameters, lgb_train, verbose_eval=self.num_boost_round, folds=partitions.folds,
             time_budget=self.time_budget_seconds,
-            num_boost_round=self.num_boost_round
+            num_boost_round=self.num_boost_round,
+            early_stopping_rounds=self.early_stopping_rounds
         )
         tuner.tune_bagging()
         tuner.tune_feature_fraction()
@@ -57,43 +61,7 @@ class LightTuner(TransformerMixin):
         tuner.run()
         return SpecializedTuningResults(tuner.best_params, tuner.best_score)
 
-@dataclass(frozen=True)
-class CrossValidator(TransformerMixin):
-    '''
-    Transformer that does cross-validation
-    '''
 
-    num_boost_round: int = 500
-    seed: int = 42
-
-    parameters: Dict = field(default_factory=lambda: {
-        'boosting_type': 'dart',
-        'objective': 'regression',
-        'metric': {'mae', 'mse', 'huber'},
-        'max_leaves': 20,
-        'max_depth': 3,
-        'learning_rate': 0.07,
-        'feature_fraction': 0.8,
-        'bagging_fraction': 1,
-        'min_data_in_leaf': 6,
-        'lambda_l1': 0.9,
-        'lambda_l2': 0.9,
-        "verbose": -1
-    })
-
-    def fit(self, partitions: ExpressionPartitions, y=None) -> Dict:
-        cat = partitions.categorical_index if partitions.features.has_categorical else "auto"
-        lgb_train = lgb.Dataset(partitions.X, partitions.Y, categorical_feature=cat, free_raw_data=False)
-        eval_hist = lgb.cv(self.parameters,
-                           lgb_train,
-                           folds=partitions.folds,
-                           metrics=["mae", "mse", "huber"],
-                           categorical_feature=cat,
-                           show_stdv=True,
-                           verbose_eval=self.num_boost_round,
-                           seed=self.seed,
-                           num_boost_round=self.num_boost_round)
-        return eval_hist
 
 @dataclass(frozen=True)
 class TuningResults:
@@ -101,6 +69,60 @@ class TuningResults:
     train_metrics: Metrics = None
     validation_metrics: Metrics = None
 
+
+@dataclass(frozen=True)
+class Tune(TransformerMixin):
+    transformer: Union[Union[TransformerMixin, Pipeline], CrossValidator]
+    n_trials: int
+    def objective_parameters(trial: Trial) -> dict:
+        return {
+            'objective': 'regression',
+            'metric': {'mae', 'mse', 'huber'},
+            'verbosity': -1,
+            'boosting_type': trial.suggest_categorical('boosting_type', ['dart', 'gbdt']),
+            'lambda_l1': trial.suggest_uniform('lambda_l1', 0.01, 4.0),
+            'lambda_l2': trial.suggest_uniform('lambda_l2', 0.01, 4.0),
+            'max_leaves': trial.suggest_int("max_leaves", 15, 25),
+            'max_depth': trial.suggest_int('max_depth', 3, 8),
+            'feature_fraction': trial.suggest_uniform('feature_fraction', 0.3, 1.0),
+            'bagging_fraction': trial.suggest_uniform('bagging_fraction', 0.3, 1.0),
+            'learning_rate': trial.suggest_uniform('learning_rate', 0.01, 0.1),
+            'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 3, 8),
+            'drop_rate': trial.suggest_uniform('drop_rate', 0.1, 0.3),
+            "verbose": -1
+        }
+
+    parameters_space: Callable[[Trial], float] = None
+    study: Study = field(default_factory=lambda: optuna.create_study(direction='minimize'))
+    metrics: str = "huber"
+    best_params: dict = None
+    take_last: bool = False
+    threads: int = 1
+
+
+    def fit(self, X, y=None):
+        data = X
+        def objective(trial: Trial):
+            params = self.default_parameters(trial) if self.parameters_space is None else self.parameters_space(trial)
+            result = self.transformer.fit_transform(data)
+            return result.last(self.metrics) if self.take_last else result.min(self.metrics)
+        self.study.optimize(objective, show_progress_bar=False, n_trials=self.n_trials, n_jobs=self.threads, gc_after_trial=True)
+        self.best_params = self.study.best_params
+        return self
+
+    #def cv(self, partitions: ExpressionPartitions, trial: Trial) -> Dict:
+    #    params = self.default_parameters(trial) if self.parameters is None else self.parameters(trial)
+    #    cross = CrossValidator(self.num_boost_round, self.seed, parameters=params)
+    #return cross.fit(partitions)
+
+    def transform(self, data: Any):
+        return self.best_params
+
+
+
+
+
+"""
 @dataclass(frozen=True)
 class GeneralTuner(TransformerMixin):
 
@@ -168,3 +190,4 @@ class GeneralTuner(TransformerMixin):
             train_metrics = None
             test_metrics = None
         return TuningResults(self.study.best_params, train_metrics, test_metrics)
+"""

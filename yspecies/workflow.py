@@ -10,12 +10,24 @@ from yspecies.utils import *
 
 
 @dataclass(frozen=True)
+class Join(TransformerMixin):
+    inputs: List[Union[TransformerMixin, Pipeline]]
+    output: Union[Union[TransformerMixin, Pipeline], Callable[[List[Any]], Any]]
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        data = [t.fit_transform(X) for t in self.inputs]
+        return self.output(data) if isinstance(self.output, Callable) else self.output.fit_transform(data)
+
+@dataclass(frozen=True)
 class Collect(TransformerMixin):
     '''
     turns a filtered (by filter) collection into one value
     '''
     fold: Callable[[Union[Iterable, Generator]], Any]
-    filter: Callable[[Any], bool] = field(default_factory=lambda x: True) #just does nothing by default
+    filter: Callable[[Any], bool] = field(default_factory=lambda: lambda x: True) #just does nothing by default
 
     def fit(self, X, y=None):
         return self
@@ -24,7 +36,7 @@ class Collect(TransformerMixin):
         return self.fold([d for d in data if self.filter(d)])
 
 @dataclass(frozen=True)
-class Repeat:
+class Repeat(TransformerMixin):
     transformer: Union[TransformerMixin, Pipeline]
     repeats: Union[Union[Iterable, Generator], int]
     map: Callable[[Any, Any], Any] = field(default_factory=lambda: lambda x, i: x) #transforms data before passing it to the transformer
