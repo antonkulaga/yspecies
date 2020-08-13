@@ -1,12 +1,18 @@
 import sys
-from pathlib import Path
+from dataclasses import replace
 
 import click
 import optuna
 from optuna import Trial
 from sklearn.pipeline import Pipeline
-from yspecies.config import Locations
-from yspecies.preprocess import FeatureSelection, EncodedFeatures, DataExtractor
+
+from yspecies.config import *
+from yspecies.dataset import ExpressionDataset
+from yspecies.partition import DataPartitioner
+from yspecies.partition import PartitionParameters
+from yspecies.preprocess import FeatureSelection, DataExtractor
+from yspecies.workflow import TupleWith, Repeat
+from yspecies.tuning import CrossValidator, ResultsCV
 
 
 def get_local_path():
@@ -43,29 +49,65 @@ def tune(name: str, trials: int, loss: str,
     else:
         not_validated_species = not_validated_species
 
-    from yspecies.dataset import ExpressionDataset
-    from yspecies.partition import DataPartitioner
-    from yspecies.tuning import GeneralTuner
-    from yspecies.models import Metrics
+
 
     locations: Locations = Locations("./") if Path("./data").exists() else Locations("../")
 
     data = ExpressionDataset.from_folder(locations.interim.selected)
 
-    selection = FeatureSelection(
+    ### PIPELINE ###
+
+    number_of_folds = 5
+
+    partition_params = PartitionParameters(number_of_folds, 0, 2, [],  42)
+
+    lgb_params = {"bagging_fraction": 0.9522534844058304,
+     "boosting_type": "dart",
+     "objective": "regression",
+     "feature_fraction": 0.42236910941558053,
+     "lambda_l1": 0.020847266580277746,
+     "lambda_l2": 2.8448564854773326,
+     "learning_rate": 0.11484015430016059,
+     "max_depth": 3,
+     "max_leaves": 35,
+     "min_data_in_leaf": 9}
+
+    partition_cv_pipe = Pipeline([
+        ('partitioner', DataPartitioner()),
+        ('prepare_for_partitioning', TupleWith(lgb_params)),
+        ('crossvalidator', CrossValidator())
+    ]
+    )
+    repeated_cv =  Repeat(partition_shap_pipe, repeats, lambda x,i: (x[0], replace(x[1], seed = i)))
+    selection_pipeline =  Pipeline([
+        ('extractor', DataExtractor()),
+        ('prepare_for_partitioning', TupleWith(partition_params)), # to extract the data required for ML from the dataset
+        ("partition_shap", repeated_cv)]
+    )
+
+
+### SELECTION PARAMS ###
+
+    selection = select_lifespan = FeatureSelection(
         samples = ["tissue","species"], #samples metadata to include
         species =  [], #species metadata other then Y label to include
         exclude_from_training = ["species"],  #exclude some fields from LightGBM training
         to_predict = "lifespan", #column to predict
         categorical = ["tissue"])
 
+    select_lifespan = selection
+    select_mass = replace(selection, to_predict = "mass_g")
+    select_gestation = replace(selection, to_predict = "gestation")
+    select_mtgc = replace(selection, to_predict = "mtgc")
+
+
     ext = Pipeline([
         ('extractor', DataExtractor(selection)), # to extract the data required for ML from the dataset
         ("partitioner", DataPartitioner(n_folds = folds, n_hold_out = hold_outs, species_in_validation=species_in_validation, not_validated_species = not_validated_species))
     ])
-    parts = ext.fit_transform(data)
-    assert (len(parts.cv_merged_index) + len(parts.hold_out_merged_index)) == data.samples.shape[0], "cv and hold out should be same as samples number"
-    assert parts.n_hold_out == 1 and parts.hold_out_partition_indexes == [parts.indexes[4]], "checking that hold_out is computed in a right way"
+
+    stage_one_lifespan = selection_pipeline.fit_transform((data, select_lifespan))
+    type(stage_one_lifespan)
 
     url = f'sqlite:///' +str((locations.metrics.lifespan / "study.sqlite").absolute())
     print('loading (if exists) study from '+url)
@@ -85,63 +127,15 @@ def tune(name: str, trials: int, loss: str,
             'lambda_l2': trial.suggest_uniform('lambda_l2', 0.01, 4.0),
             'max_leaves': trial.suggest_int("max_leaves", 15, 25),
             'max_depth': trial.suggest_int('max_depth', 3, 8),
-            'feature_fraction': trial.suggest_uniform('feature_fraction', 0.4, 1.0),
-            'bagging_fraction': trial.suggest_uniform('bagging_fraction', 0.4, 1.0),
-            'learning_rate': trial.suggest_uniform('learning_rate', 0.04, 0.2),
-            'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 4, 10),
+            'feature_fraction': trial.suggest_uniform('feature_fraction', 0.3, 1.0),
+            'bagging_fraction': trial.suggest_uniform('bagging_fraction', 0.3, 1.0),
+            'learning_rate': trial.suggest_uniform('learning_rate', 0.01, 0.1),
+            'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 3, 8),
             "verbose": -1
         }
 
-    tuner = GeneralTuner(n_trials=trials, n_jobs=threads, study=study, parameters=objective_parameters, to_optimize=loss)
-    best_parameters = tuner.fit(parts)
-    print("======BEST=PARAMETERS===============")
-    print(best_parameters)
-    print("=====BEST=RESULTS===================")
-    results = tuner.transform(parts)
-    #parameters: ('COMPLETE', 0.20180128076981702, '2020-08-09 09:13:47.778135', 2)]
-    print(results)
-    import json
-    with open(locations.metrics.lifespan / 'parameters.json', 'w') as fp:
-        json.dump(best_parameters, fp)
-    if results.train_metrics is not None and results.validation_metrics is not None:
-        metrics_df = Metrics.combine([results.train_metrics, results.validation_metrics])
-        metrics_df = metrics_df.rename(index={0: "train", 1: "test"})
-        metrics_df.index.name = "Dataset"
-        metrics_df.to_csv(locations.metrics.lifespan / 'metrics.csv')
-
-def light_tune():
-
-    from yspecies.dataset import ExpressionDataset
-    from yspecies.config import Locations
-    from yspecies.preprocess import FeatureSelection, EncodedFeatures, DataExtractor
-    from yspecies.partition import DataPartitioner
-    from sklearn.pipeline import Pipeline
-    from yspecies.tuning import LightTuner
-
-    local = get_local_path()
-    from pathlib import Path
-    locations: Locations = Locations("./") if Path("./data").exists() else Locations("../")
-    data = ExpressionDataset.from_folder(locations.interim.selected)
-
-    selection = FeatureSelection(
-        samples = ["tissue","species"], #samples metadata to include
-        species =  [], #species metadata other then Y label to include
-        exclude_from_training = ["species"],  #exclude some fields from LightGBM training
-        to_predict = "lifespan", #column to predict
-        categorical = ["tissue"])
-    ext = Pipeline([
-        ('extractor', DataExtractor(selection)), # to extract the data required for ML from the dataset
-        ("partitioner", DataPartitioner(n_folds = 5, n_hold_out = 1, species_in_validation=3))
-    ])
-
-    parts = ext.fit_transform(data)
-    lt = LightTuner(200)
-    tn = lt.fit(parts)
-    print("parameters:")
-    print(lt.parameters)
-
 if __name__ == "__main__":
-    #tune()
-    light_tune()
+    tune()
+    #light_tune()
 
 

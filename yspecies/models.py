@@ -1,10 +1,12 @@
-from dataclasses import *
 from functools import cached_property
-
+from dataclasses import dataclass, replace
+import numpy as np
+import pandas as pd
 import lightgbm as lgb
-from lightgbm import Booster
+from sklearn.base import TransformerMixin
 from sklearn.metrics import *
 
+from yspecies.partition import ExpressionPartitions
 from yspecies.utils import *
 
 
@@ -37,46 +39,83 @@ class Metrics:
     def to_numpy(self):
         return np.array([self.R2, self.MSE, self.MAE])
 
-
 @dataclass(frozen=True)
-class ModelFactory:
+class ResultsCV:
 
-    parameters: Dict = field(default_factory=lambda: {
-        'boosting_type': 'gbdt',
-        'objective': 'regression',
-        'metric': {'l2', 'l1'},
-        'max_leaves': 20,
-        'max_depth': 3,
-        'learning_rate': 0.07,
-        'feature_fraction': 0.8,
-        'bagging_fraction': 1,
-        'min_data_in_leaf': 6,
-        'lambda_l1': 0.9,
-        'lambda_l2': 0.9,
-        "verbose": -1
-    })
+    parameters: Dict
+    evaluation: Dict
+
+    @staticmethod
+    def take_best(results: List['ResultsCV'], metrics: str = "huber", last: bool = False):
+        result: float = None
+        for r in results:
+            value = r.last(metrics) if last else r.min(metrics)
+            result = value if result is None or value < result else result
+        return result
 
 
-    def regression_model(self, X_train, X_test, y_train, y_test, categorical=None, num_boost_round:int = 200, params: dict = None) -> Booster:
-        '''
-        trains a regression model
-        :param X_train:
-        :param X_test:
-        :param y_train:
-        :param y_test:
-        :param categorical:
-        :param params:
-        :return:
-        '''
-        parameters = self.parameters if params is None else params
-        cat = categorical if len(categorical) >0 else "auto"
-        lgb_train = lgb.Dataset(X_train, y_train, categorical_feature=cat)
-        lgb_eval = lgb.Dataset(X_test, y_test, reference=lgb_train)
-        evals_result = {}
-        gbm = lgb.train(parameters,
-                        lgb_train,
-                        num_boost_round=num_boost_round,
-                        valid_sets=lgb_eval,
-                        evals_result=evals_result,
-                        verbose_eval=num_boost_round)
-        return gbm
+    @cached_property
+    def keys(self):
+        return list(self.evaluation.keys())
+
+    @cached_property
+    def mins(self):
+        return {k: (np.array(self.evaluation[k]).min()) for k in self.keys}
+
+    @cached_property
+    def latest(self):
+        return {k: (np.array(self.evaluation[k])[-1]) for k in self.keys}
+
+
+    def min(self, metrics: str) -> float:
+        return self.mins[metrics] if metrics in self.mins else self.mins[metrics+"-mean"]
+
+
+    def last(self, metrics: str) -> float:
+        return self.latest[metrics] if metrics in self.latest else self.latest[metrics+"-mean"]
+
+    def _repr_html_(self):
+        first = self.evaluation[self.keys[0]]
+        return f"""<table border='2'>
+               <caption><h3>CrossValidation results</h3><caption>
+               <tr style='text-align:center'>{"".join([f'<th>{k}</th>' for k in self.keys])}</tr>
+               {"".join(["<tr>" + "".join([f"<td>{self.evaluation[k][i]}</td>" for k in self.keys]) + "</tr>" for i in range(0, len(first))])}
+        </table>"""
+
+
+@dataclass
+class CrossValidator(TransformerMixin):
+
+    evaluation: ResultsCV = None
+    num_iterations: int = 200
+    early_stopping_rounds:  int = 10
+
+    def num_boost_round(self, parameters: Dict):
+        return parameters.get("num_iterations") if parameters.get("num_iterations") is not None else parameters.get("num_boost_round") if parameters.get("num_boost_round") is not None else self.num_iterations
+
+    def fit(self, to_fit: Tuple[ExpressionPartitions, Dict], y=None) -> Dict:
+        partitions, parameters = to_fit
+        cat = partitions.categorical_index if partitions.features.has_categorical else "auto"
+        lgb_train = lgb.Dataset(partitions.X, partitions.Y, categorical_feature=cat, free_raw_data=False)
+
+        num_boost_round = self.num_boost_round(parameters)
+        iterations = parameters.get("num_boost_round") if parameters.get("num_iterations") is None else parameters.get("num_boost_round")
+        stopping_callback = lgb.early_stopping(self.early_stopping_rounds)
+        eval_hist = lgb.cv(parameters,
+                           lgb_train,
+                           folds=partitions.folds,
+                           metrics=["mae", "mse", "huber"],
+                           categorical_feature=cat,
+                           show_stdv=True,
+                           verbose_eval=num_boost_round,
+                           seed=partitions.seed,
+                           num_boost_round=num_boost_round,
+                           #early_stopping_rounds=self.early_stopping_rounds,
+                           callbacks=[stopping_callback]
+                           )
+        self.evaluation = ResultsCV(parameters, eval_hist)
+        return self
+
+    def transform(self, to_fit: Tuple[ExpressionPartitions, Dict]):
+        assert self.evaluation is not None, "Cross validation should be fitted before calling transform!"
+        return self.evaluation
