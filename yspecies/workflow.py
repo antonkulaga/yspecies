@@ -8,6 +8,26 @@ from sklearn.preprocessing import LabelEncoder
 from yspecies.dataset import ExpressionDataset
 from yspecies.utils import *
 
+@dataclass(frozen=True)
+class SplitReduce(TransformerMixin):
+
+    outputs: List[Union[TransformerMixin, Pipeline]]
+    split: Callable[[Any], List[Any]]
+    reduce: Callable[[Any, List[Any]], Any] #gets original input and outputs of all transformers
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        data = X
+        inputs = self.split(data)
+        outputs = self.outputs if isinstance(self.outputs, Iterable) else [self.outputs]
+        assert len(inputs) == len(outputs), f"splitter should give one input per each output! Now len(inputs) {len(inputs)} and len(outputs) {len(outputs)}"
+        results = [o.fit_transform(inputs[i]) for i, o in enumerate(outputs)]
+        reduced_results = self.reduce(data, results)
+        return reduced_results
+
+
 
 @dataclass(frozen=True)
 class Join(TransformerMixin):
@@ -58,12 +78,15 @@ class TupleWith(TransformerMixin):
     Concatenates (in tuple) the results of Transformers or parameters plus transformers
     """
     parameters: Union[Union[TransformerMixin, Pipeline], Any]
+    map_left: Callable[[Any], Any] = field(default_factory=lambda: lambda x: x)
+    map_right: Callable[[Any], Any] = field(default_factory=lambda: lambda x: x)
+
 
     def fit(self, X, y = None):
         return self
 
     def transform(self, data: Any) -> Tuple:
         if isinstance(self.parameters, TransformerMixin) or isinstance(self.parameters, Pipeline):
-            return (data, self.parameters.fit_transform(data))
+            return (self.map_left(data), self.parameters.fit_transform(self.map_right(data)))
         else:
-            return (data,) + (self.parameters if isinstance(self.parameters, Tuple) else (self.parameters, ))
+            return (self.map_left(data),) + (self.map_right(self.parameters) if isinstance(self.parameters, Tuple) else (self.map_right(self.parameters), ))

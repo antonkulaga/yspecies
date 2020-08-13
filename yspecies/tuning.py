@@ -70,7 +70,7 @@ class TuningResults:
     validation_metrics: Metrics = None
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class Tune(TransformerMixin):
     transformer: Union[Union[TransformerMixin, Pipeline], CrossValidator]
     n_trials: int
@@ -104,8 +104,11 @@ class Tune(TransformerMixin):
         data = X
         def objective(trial: Trial):
             params = self.default_parameters(trial) if self.parameters_space is None else self.parameters_space(trial)
-            result = self.transformer.fit_transform(data)
-            return result.last(self.metrics) if self.take_last else result.min(self.metrics)
+            result = self.transformer.fit_transform((data, params))
+            if isinstance(result, ResultsCV):
+                return result.last(self.metrics) if self.take_last else result.min(self.metrics)
+            else:
+                return result
         self.study.optimize(objective, show_progress_bar=False, n_trials=self.n_trials, n_jobs=self.threads, gc_after_trial=True)
         self.best_params = self.study.best_params
         return self
