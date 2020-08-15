@@ -38,5 +38,5 @@ min_samples_per_species: 2
 orthology: "one2oneplus_directed"
 reference_species: "Homo_sapiens"
 animal_class: "Mammalia"
-na_threshold: 0.1
-na_cleaning_target: "expressions"
+na_threshold_expressions: 0.1 # the toughest expressions threshold
+na_threshold_genes: 0.5 #less tough genes threshold

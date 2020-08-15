@@ -15,7 +15,7 @@ class PartitionParameters:
     species_in_validation: int = 2  # exclude species to validate them
     not_validated_species: List[str] = field(
         default_factory=lambda: [])  # ["Homo sapiens"] originally we wanted to exclude Human, but not now
-    seed: int = 42  # random seed for partitioning
+    seed: int = None  # random seed for partitioning
 
 
 @dataclass(frozen=True)
