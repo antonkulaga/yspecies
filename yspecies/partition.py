@@ -57,6 +57,14 @@ class ExpressionPartitions:
         return list(itertools.chain(*[pindex for pindex in self.hold_out_partition_indexes]))
 
     @cached_property
+    def hold_out_species(self):
+        return self.validation_species[self.n_cv_folds:len(self.indexes)]
+
+    @cached_property
+    def hold_out_merged_species(self):
+        return list(itertools.chain(*self.hold_out_species))
+
+    @cached_property
     def categorical_index(self):
         # temporaly making them auto
         return [ind for ind, c in enumerate(self.X.columns) if c in self.features.categorical]
@@ -97,7 +105,7 @@ class ExpressionPartitions:
         return self.X.iloc[self.hold_out_merged_index]
 
     @cached_property
-    def hold_out_y(self):
+    def hold_out_y(self) -> pd.DataFrame:
         assert self.n_hold_out > 0, "current n_hold_out is 0 partitions, so no hold out data can be extracted!"
         return self.Y.iloc[self.hold_out_merged_index]
 
@@ -165,6 +173,10 @@ class DataPartitioner(TransformerMixin):
             for_partition) == 2, "partitioner should get the data to partition and partition parameters and have at least two elements"
         encoded_data, partition_params = for_partition
         assert isinstance(encoded_data.samples, pd.DataFrame), "Should contain extracted Pandas DataFrame with X and Y"
+        if partition_params.seed is not None:
+            import random
+            random.seed(partition_params.seed)
+            np.random.seed(partition_params.seed)
         return self.sorted_stratification(encoded_data, partition_params)
 
     def sorted_stratification(self, encodedFeatures: EncodedFeatures,
@@ -187,18 +199,18 @@ class DataPartitioner(TransformerMixin):
             df_index = X.index
             # TODO: looks overly complicated (too many accumulating variables, refactor is needed)
             k_sets_indexes = []
-            k_sets_of_species = []
-            already_selected = []
+            species_for_validation = []
+            already_selected_species = []
             for i in range(partition_params.n_folds):
                 index_set = []
                 choices = []
                 for j in range(partition_params.species_in_validation):
                     choice = np.random.choice(all_species)
-                    while choice in already_selected:
+                    while choice in already_selected_species:
                         choice = np.random.choice(all_species)
                     choices.append(choice)
-                    already_selected.append(choice)
-                k_sets_of_species.append(choices)
+                    already_selected_species.append(choice)
+                species_for_validation.append(choices)
                 species = X['species'].values
                 for j, c in enumerate(species):
                     if c in choices:
@@ -235,5 +247,5 @@ class DataPartitioner(TransformerMixin):
                     else:
                         partition_indexes[i] = list(set(partition_indexes[i]).difference(set(k_sets_indexes[j])))
 
-        return ExpressionPartitions(encodedFeatures, X_sorted, Y_sorted, partition_indexes, k_sets_of_species,
+        return ExpressionPartitions(encodedFeatures, X_sorted, Y_sorted, partition_indexes, species_for_validation,
                                     n_hold_out=partition_params.n_hold_out, seed=partition_params.seed)

@@ -8,7 +8,7 @@ import yspecies
 from yspecies.selection import Fold
 from yspecies.utils import *
 from yspecies.partition import ExpressionPartitions
-
+from yspecies.models import Metrics, BasicMetrics
 
 @dataclass(frozen=True)
 class FeatureResults:
@@ -28,9 +28,22 @@ class FeatureResults:
     def validation_species(self):
         return [f.validation_species for f in self.folds]
 
+    @property
+    def average_metrics(self):
+        return yspecies.selection.Metrics.average([f.metrics for f in self.folds])
+
     @cached_property
     def metrics(self):
-        return yspecies.selection.Metrics.combine([f.metrics for f in self.folds]).join(pd.Series(data = self.validation_species, name="validation_species"))
+        return yspecies.selection.Metrics.combine([f.metrics for f in self.folds])
+
+    @cached_property
+    def metrics_df(self):
+        return self.metrics.join(pd.Series(data = self.validation_species, name="validation_species"))
+
+    @cached_property
+    def hold_out_metrics(self):
+        return yspecies.selection.Metrics.combine([f.validation_metrics for f in self.folds]).join(pd.Series(data = self.partitions.hold_out_species * self.partitions.n_cv_folds, name="hold_out_species"))
+
 
     def __repr__(self):
         #to fix jupyter freeze (see https://github.com/ipython/ipython/issues/9771 )
@@ -143,8 +156,8 @@ class FeatureResults:
     def _repr_html_(self):
         return f"<table border='2'>" \
                f"<caption><h3>Feature selection results</h3><caption>" \
-               f"<tr style='text-align:center'><th>selected</th><th>metrics</th></tr>" \
-               f"<tr><td>{self.selected._repr_html_()}</th><th>{self.metrics._repr_html_()}</th></tr>" \
+               f"<tr style='text-align:center'><th>selected</th><th>metrics</th><th>hold out metrics</th></tr>" \
+               f"<tr><td>{self.selected._repr_html_()}</th><th>{self.metrics_df._repr_html_()}</th><th>{self.hold_out_metrics._repr_html_()}</th></tr>" \
                f"</table>"
 
     @cached_property
@@ -154,16 +167,39 @@ class FeatureResults:
 @dataclass
 class FeatureSummary:
     results: List[FeatureResults]
+
+    def get_metrics(self) -> Metrics:
+        return Metrics.combine([r.metrics for r in self.results])
+
+    @cached_property
+    def average_metrics(self) -> pd.DataFrame:
+        return np.average([r.average_metrics for r in self.results], axis=0)
+
+    @cached_property
+    def metrics(self) -> pd.DataFrame:
+        return pd.concat([r.metrics for r in self.results])
+
+    @property
+    def MSE(self) -> float:
+        return self.metrics.MSE
+
+    @property
+    def MAE(self) -> float:
+        return self.metrics.MAE
+
+    @property
+    def R2(self) -> float:
+        return self.metrics.R2
     #intersection_percentage: float = 1.0
 
     @cached_property
     def selected(self):
         result: pd.DataFrame = self.results[0].selected[["symbol"]]
         #prefix = if result.columns
-        pref: str = "gain" if len([c for c in result.selected.columns if "gain" in c])>0 else "shap"
+        pref: str = "gain" if len([c for c in self.results[0].selected.columns if "gain" in c])>0 else "shap"
         for i, r in enumerate(self.results):
             c_shap = f"{pref}_{i}"
             c_tau = f"kendall_tau_{i}"
-            res = r.selected.rename(columns={f"{pref}_absolute_sum_to_lifespan": c_shap, "kendall_tau_to_lifespan": c_tau})
+            res = r.selected.rename(columns={f"{pref}_absolute_sum_to_lifespan": c_shap, "gain_score_to_lifespan": c_shap, "kendall_tau_to_lifespan": c_tau})
             result = result.join(res[[c_shap, c_tau]], how="inner")
         return result

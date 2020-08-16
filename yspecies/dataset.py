@@ -258,9 +258,11 @@ class ExpressionDataset:
         upd_expressions: pd.DataFrame = filter_fun(self.expressions.copy())
         upd_genes = self.genes.loc[upd_expressions.columns].copy()#.reindex(upd_expressions.columns)
         upd_samples = self.samples.loc[upd_expressions.index].copy()#.reindex(upd_expressions.index)
-        upd_genes_meta = None if self.genes_meta is None else self.genes_meta.loc[upd_genes.index]
+        upd_genes_meta = None if self.genes_meta is None else self.genes_meta.loc[upd_genes.index].copy()
         species_index = upd_samples["species"].drop_duplicates()
         upd_species = None if self.species is None else self.species.loc[species_index].copy()
+        if upd_genes_meta is not None:
+            upd_genes_meta.index.name = "ensembl_id"
         return ExpressionDataset(self.name, upd_expressions, upd_samples, upd_species, upd_genes, upd_genes_meta)
 
 class SamplesIndexes:
@@ -281,7 +283,9 @@ class SamplesIndexes:
         species_index = upd_samples["species"].drop_duplicates()
         upd_species = None if self.dataset.species is None else self.dataset.species.copy().loc[species_index]
         upd_genes = self.dataset.genes[[s for s in species_index.to_list() if s != self.dataset.genes.index.name]].copy()
-        upd_genes_meta = None if self.dataset.genes_meta is None else self.dataset.genes_meta.loc[upd_genes.index]
+        upd_genes_meta: pd.DataFrame = None if self.dataset.genes_meta is None else self.dataset.genes_meta.loc[upd_genes.index]
+        if upd_genes_meta is not None:
+            upd_genes_meta.index.name = "ensembl_id"
         #upd_genes_meta = None if self.dataset.genes_meta is None else upd_genes
         #upd_expressions = upd_expressions.reindex(upd_samples.index)
         return ExpressionDataset(self.dataset.name, upd_expressions, upd_samples, upd_species,  upd_genes, upd_genes_meta)
@@ -345,6 +349,8 @@ class GenesIndexes:
         upd_expressions = self.dataset.expressions[upd_genes.index].copy()
         upd_expressions = upd_expressions.loc[self.dataset.samples.index]
         upd_genes_meta = None if self.dataset.genes_meta is None else self.dataset.genes_meta.loc[upd_genes.index]
+        if upd_genes_meta is not None:
+            upd_genes_meta.index.name = "ensembl_id"
         return ExpressionDataset(self.dataset.name, upd_expressions, self.dataset.samples, self.dataset.species, upd_genes, upd_genes_meta)
 
     def filter(self, filter_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> ExpressionDataset:
