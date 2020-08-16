@@ -21,6 +21,10 @@ class FeatureSelection:
     categorical: List[str] = field(default_factory=lambda: ["tissue"])
     exclude_from_training: List[str] = field(default_factory=lambda: ["species"])#columns that should note be used for training
     genes_meta: pd.DataFrame = None #metada for genes, TODO: check if still needed
+    select_by: str = "shap"
+    importance_type: str = "gain"
+    clean_y_na: bool = True #cleans NA Y in species
+
 
 
     @property

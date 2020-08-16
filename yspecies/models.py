@@ -1,7 +1,5 @@
 from functools import cached_property
-from dataclasses import dataclass, replace
-import numpy as np
-import pandas as pd
+
 import lightgbm as lgb
 from sklearn.base import TransformerMixin
 from sklearn.metrics import *
@@ -11,33 +9,60 @@ from yspecies.utils import *
 
 
 @dataclass(frozen=True)
+class BasicMetrics:
+    MAE: float
+    MSE: float
+    huber: float
+
+    @staticmethod
+    def from_dict(dict: Dict):
+        return BasicMetrics(dict["l1"], dict["l2"], dict["huber"])
+
+    @staticmethod
+    def from_dict(dict: Dict, row: int):
+        return BasicMetrics(dict["l1"][row], dict["l2"][row], dict["huber"][row])
+
+    @staticmethod
+    def parse_eval(evals_result: Dict):
+        dict = list(evals_result.values())[0]
+        l = len(dict["l1"])
+        [BasicMetrics.from_dict(dict, i) for i in range(0, l)]
+
+
+@dataclass(frozen=True)
 class Metrics:
 
+    @staticmethod
+    def average(metrics: List['Metrics']) -> pd.DataFrame:
+        return np.average([m.to_numpy for m in metrics], axis=0)
     '''
     Class to store metrics
     '''
-
-
     @staticmethod
     def combine(metrics: List['Metrics']) -> pd.DataFrame:
-        mts = pd.DataFrame(np.zeros([len(metrics), 3]), columns=["R^2", "MSE", "MAE"])
+        mts = pd.DataFrame(np.zeros([len(metrics), 3]), columns=["R^2", "MAE", "MSE"]) #, "MSLE"
         for i, m in enumerate(metrics):
             mts.iloc[i] = m.to_numpy
         return mts
 
     @staticmethod
-    def calculate(prediction, ground_truth) -> 'Metrics':
+    def calculate(ground_truth, prediction) -> 'Metrics':
         return Metrics(
             r2_score(ground_truth, prediction),
+            mean_absolute_error(ground_truth, prediction),
             mean_squared_error(ground_truth, prediction),
-            mean_absolute_error(ground_truth, prediction))
+
+            #mean_squared_log_error(ground_truth, prediction)
+        )
+
     R2: float
-    MSE: float
     MAE: float
+    MSE: float
+    #MSLE: float
 
     @cached_property
     def to_numpy(self):
-        return np.array([self.R2, self.MSE, self.MAE])
+        return np.array([self.R2, self.MAE, self.MSE])
 
 @dataclass(frozen=True)
 class ResultsCV:

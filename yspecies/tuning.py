@@ -94,7 +94,7 @@ class Tune(TransformerMixin):
 
     parameters_space: Callable[[Trial], float] = None
     study: Study = field(default_factory=lambda: optuna.create_study(direction='minimize'))
-    metrics: str = "huber"
+    #metrics: str = "huber"
     best_params: dict = None
     take_last: bool = False
     threads: int = 1
