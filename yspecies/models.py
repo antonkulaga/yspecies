@@ -26,43 +26,56 @@ class BasicMetrics:
     def parse_eval(evals_result: Dict):
         dict = list(evals_result.values())[0]
         l = len(dict["l1"])
-        [BasicMetrics.from_dict(dict, i) for i in range(0, l)]
+        return [BasicMetrics.from_dict(dict, i) for i in range(0, l)]
 
 
 @dataclass(frozen=True)
 class Metrics:
 
     @staticmethod
-    def average(metrics: List['Metrics']) -> pd.DataFrame:
-        return np.average([m.to_numpy for m in metrics], axis=0)
+    def from_numpy(arr: np.ndarray):
+        return Metrics(arr[0], arr[1], arr[2], arr[3])
+
+    @staticmethod
+    def average(metrics: List['Metrics']) -> 'Metrics':
+        return Metrics.from_numpy(np.average([m.to_numpy for m in metrics], axis=0))
     '''
     Class to store metrics
     '''
     @staticmethod
-    def combine(metrics: List['Metrics']) -> pd.DataFrame:
-        mts = pd.DataFrame(np.zeros([len(metrics), 3]), columns=["R^2", "MAE", "MSE"]) #, "MSLE"
+    def to_dataframe(metrics: Union[List['Metrics'], 'Metrics']) -> pd.DataFrame:
+        metrics = [metrics] if isinstance(metrics, Metrics) else metrics
+        mts = pd.DataFrame(np.zeros([len(metrics), 4]), columns=["R^2", "MAE", "MSE", "huber"]) #, "MSLE"
         for i, m in enumerate(metrics):
             mts.iloc[i] = m.to_numpy
         return mts
 
     @staticmethod
-    def calculate(ground_truth, prediction) -> 'Metrics':
+    def calculate(ground_truth, prediction, huber: float = None) -> 'Metrics':
+        """
+        Calculates metrics while getting huber from outside
+        :param ground_truth:
+        :param prediction:
+        :param huber:
+        :return:
+        """
         return Metrics(
             r2_score(ground_truth, prediction),
             mean_absolute_error(ground_truth, prediction),
             mean_squared_error(ground_truth, prediction),
-
+            huber=huber
             #mean_squared_log_error(ground_truth, prediction)
         )
 
     R2: float
     MAE: float
     MSE: float
+    huber: float
     #MSLE: float
 
     @cached_property
     def to_numpy(self):
-        return np.array([self.R2, self.MAE, self.MSE])
+        return np.array([self.R2, self.MAE, self.MSE, self.huber])
 
 @dataclass(frozen=True)
 class ResultsCV:

@@ -21,6 +21,14 @@ class FeatureResults:
     partitions: ExpressionPartitions = field(default_factory=lambda: None)
 
     @property
+    def to_predict(self):
+        return self.partitions.features.to_predict
+
+    @cached_property
+    def kendall_tau_abs_mean(self):
+        return self.selected[f"kendall_tau_to_{self.to_predict}"].abs().mean()
+
+    @property
     def head(self) -> Fold:
         return self.folds[0]
 
@@ -29,20 +37,20 @@ class FeatureResults:
         return [f.validation_species for f in self.folds]
 
     @property
-    def average_metrics(self):
+    def metrics_average(self) -> Metrics:
         return yspecies.selection.Metrics.average([f.metrics for f in self.folds])
 
     @cached_property
-    def metrics(self):
-        return yspecies.selection.Metrics.combine([f.metrics for f in self.folds])
+    def metrics(self) -> Metrics:
+        return yspecies.selection.Metrics.to_dataframe([f.metrics for f in self.folds])
 
     @cached_property
     def metrics_df(self):
-        return self.metrics.join(pd.Series(data = self.validation_species, name="validation_species"))
+        return self.metrics.join(pd.Series(data=self.validation_species, name="validation_species"))
 
     @cached_property
     def hold_out_metrics(self):
-        return yspecies.selection.Metrics.combine([f.validation_metrics for f in self.folds]).join(pd.Series(data = self.partitions.hold_out_species * self.partitions.n_cv_folds, name="hold_out_species"))
+        return yspecies.selection.Metrics.to_dataframe([f.validation_metrics for f in self.folds]).join(pd.Series(data =self.partitions.hold_out_species * self.partitions.n_cv_folds, name="hold_out_species"))
 
 
     def __repr__(self):
@@ -168,12 +176,24 @@ class FeatureResults:
 class FeatureSummary:
     results: List[FeatureResults]
 
+    @property
+    def features(self):
+        return self.results[0].partitions.features
+
     def get_metrics(self) -> Metrics:
-        return Metrics.combine([r.metrics for r in self.results])
+        return Metrics.to_dataframe([r.metrics for r in self.results])
+
+    @property
+    def to_predict(self):
+        return self.results[0].to_predict
 
     @cached_property
-    def average_metrics(self) -> pd.DataFrame:
-        return np.average([r.average_metrics for r in self.results], axis=0)
+    def metrics_average(self) -> pd.DataFrame:
+        return Metrics.average([r.metrics_average for r in self.results])
+
+    @cached_property
+    def kendall_tau_abs_mean(self):
+        return np.mean(np.absolute(np.array([r.kendall_tau_abs_mean for r in self.results])))
 
     @cached_property
     def metrics(self) -> pd.DataFrame:
@@ -196,10 +216,10 @@ class FeatureSummary:
     def selected(self):
         result: pd.DataFrame = self.results[0].selected[["symbol"]]
         #prefix = if result.columns
-        pref: str = "gain" if len([c for c in self.results[0].selected.columns if "gain" in c])>0 else "shap"
+        pref: str = self.features.importance_type if len([c for c in self.results[0].selected.columns if self.features.importance_type in c])>0 else "shap"
         for i, r in enumerate(self.results):
             c_shap = f"{pref}_{i}"
             c_tau = f"kendall_tau_{i}"
-            res = r.selected.rename(columns={f"{pref}_absolute_sum_to_lifespan": c_shap, "gain_score_to_lifespan": c_shap, "kendall_tau_to_lifespan": c_tau})
+            res = r.selected.rename(columns={f"{pref}_absolute_sum_to_{self.to_predict}": c_shap, f"{self.features.importance_type}_score_to_{self.to_predict}": c_shap, f"kendall_tau_to_{self.to_predict}": c_tau})
             result = result.join(res[[c_shap, c_tau]], how="inner")
         return result

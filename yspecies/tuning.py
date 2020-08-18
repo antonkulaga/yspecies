@@ -1,6 +1,5 @@
 import lightgbm as lgb
-import optuna
-from optuna import Study, Trial
+from functools import cached_property
 from sklearn.base import TransformerMixin
 from dataclasses import *
 
@@ -10,6 +9,11 @@ from yspecies.models import Metrics, CrossValidator, ResultsCV
 from yspecies.partition import ExpressionPartitions
 from yspecies.utils import *
 
+import optuna
+from optuna import Study, Trial
+from optuna import multi_objective
+from optuna.multi_objective import trial
+from optuna.multi_objective.study import MultiObjectiveStudy
 
 @dataclass(frozen=True)
 class SpecializedTuningResults:
@@ -69,6 +73,17 @@ class TuningResults:
     train_metrics: Metrics = None
     validation_metrics: Metrics = None
 
+@dataclass(frozen=True)
+class MultiObjectiveResults:
+    trials: List[trial.FrozenMultiObjectiveTrial]
+
+    @cached_property
+    def params(self) -> Dict:
+        return [t.params for t in self.trials]
+
+    @cached_property
+    def results(self) -> Dict:
+        return [t.values for t in self.trials]
 
 @dataclass(frozen=False)
 class Tune(TransformerMixin):
@@ -93,10 +108,8 @@ class Tune(TransformerMixin):
         }
 
     parameters_space: Callable[[Trial], float] = None
-    study: Study = field(default_factory=lambda: optuna.create_study(direction='minimize'))
-    #metrics: str = "huber"
-    best_params: dict = None
-    take_last: bool = False
+    study: MultiObjectiveStudy= field(default_factory=lambda: optuna.multi_objective.study.create_study(directions=['minimize', 'maximize']))
+    pareto_front_trials: MultiObjectiveResults = field(default_factory=lambda: None)
     threads: int = 1
 
 
@@ -110,16 +123,11 @@ class Tune(TransformerMixin):
             else:
                 return result
         self.study.optimize(objective, show_progress_bar=False, n_trials=self.n_trials, n_jobs=self.threads, gc_after_trial=True)
-        self.best_params = self.study.best_params
+        self.pareto_front_trials = MultiObjectiveResults(self.study.get_pareto_front_trials())
         return self
 
-    #def cv(self, partitions: ExpressionPartitions, trial: Trial) -> Dict:
-    #    params = self.default_parameters(trial) if self.parameters is None else self.parameters(trial)
-    #    cross = CrossValidator(self.num_boost_round, self.seed, parameters=params)
-    #return cross.fit(partitions)
-
-    def transform(self, data: Any):
-        return self.best_params
+    def transform(self, data: Any) -> MultiObjectiveResults:
+        return self.pareto_front_trials
 
 
 

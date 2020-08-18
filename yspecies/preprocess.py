@@ -23,6 +23,7 @@ class FeatureSelection:
     genes_meta: pd.DataFrame = None #metada for genes, TODO: check if still needed
     select_by: str = "shap"
     importance_type: str = "gain"
+    feature_perturbation: str = "tree_path_dependent"
     clean_y_na: bool = True #cleans NA Y in species
 
 
