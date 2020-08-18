@@ -122,7 +122,7 @@ class ExpressionPartitions:
         return self.X.T
 
     @property
-    def features(self):
+    def features(self) -> FeatureSelection:
         return self.data.features
 
     def split_fold(self, i: int):

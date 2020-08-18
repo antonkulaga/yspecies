@@ -155,4 +155,4 @@ tune:
   - path: data/metrics/lifespan/parameters.json
     md5: 39716c866e5d47b2a912cb022acfccf0
   - path: data/metrics/lifespan/study.sqlite
-    md5: 4d4d1db938448ef5e7bd58c71e940ae7
+    md5: c21ce7d1ce5f5fb3074138834691c366

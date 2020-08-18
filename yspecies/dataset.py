@@ -10,9 +10,9 @@ Classes:
 from pathlib import Path
 from typing import Callable, Union
 from typing import List
-
+from functools import cached_property
 import pandas as pd
-
+from dataclasses import dataclass
 
 class ExpressionDataset:
     '''
@@ -106,12 +106,15 @@ class ExpressionDataset:
     def has_species_info(self):
         return self.species is not None
 
-    @property
-    def by_genes(self):
+    @cached_property
+    def by_genes(self) -> 'GenesIndexes':
         return GenesIndexes(self)
 
-    @property
-    def by_samples(self):
+    def by_species(self) -> 'SpeciesIndexes':
+        return SpeciesIndexes(self)
+
+    @cached_property
+    def by_samples(self) -> 'SamplesIndexes':
         '''
         Indexes by samples
         :return:
@@ -196,6 +199,10 @@ class ExpressionDataset:
     def shape(self):
         return [self.expressions.shape, self.genes.shape, self.samples.shape]
 
+    def __repr__(self):
+        #to fix jupyter freeze (see https://github.com/ipython/ipython/issues/9771 )
+        return self._repr_html_()
+
     def _repr_html_(self):
         '''
         Function to provide nice HTML outlook in jupyter lab notebooks
@@ -265,12 +272,47 @@ class ExpressionDataset:
             upd_genes_meta.index.name = "ensembl_id"
         return ExpressionDataset(self.name, upd_expressions, upd_samples, upd_species, upd_genes, upd_genes_meta)
 
+@dataclass(frozen=True)
+class SpeciesIndexes:
+    """
+    Represent indexing by species (returns all samples that fit species
+    """
+
+    dataset: ExpressionDataset
+
+    def __getitem__(self, item) -> ExpressionDataset:
+        '''
+        Samples index function
+        :param item:
+        :return:
+        '''
+        #assert self.dataset.species is not None, "You can use species index only if you have species annotation!"
+        items = [item] if type(item) == str else item
+        return self.dataset.by_samples.filter(lambda samples: samples[self.dataset.samples["species"].isin(items)])
+
+    def filter(self, filter_fun: Callable[[pd.DataFrame], pd.DataFrame]):
+        assert self.dataset.species is not None, "You can use species index only if you have species annotation!"
+        return self.collect(lambda df: self.dataset.species[filter_fun(df)])
+
+    def collect(self, collect_fun: Callable[[pd.DataFrame], pd.DataFrame]):
+        assert self.dataset.species is not None, "You can use species index only if you have species annotation!"
+        upd_species = collect_fun(self.dataset.species.copy())
+        upd_samples: pd.DataFrame = self.dataset.samples[self.dataset.species.isin(upd_species.index)]
+        upd_expressions: pd.DataFrame = self.dataset.expressions.loc[upd_samples.index].copy()
+        upd_genes = self.dataset.genes[[s for s in upd_species.index.to_list() if s != self.dataset.genes.index.name]].copy()
+        upd_genes_meta: pd.DataFrame = None if self.dataset.genes_meta is None else self.dataset.genes_meta.loc[upd_genes.index]
+        if upd_genes_meta is not None:
+            upd_genes_meta.index.name = "ensembl_id"
+        #upd_genes_meta = None if self.dataset.genes_meta is None else upd_genes
+        #upd_expressions = upd_expressions.reindex(upd_samples.index)
+        return ExpressionDataset(self.dataset.name, upd_expressions, upd_samples, upd_species,  upd_genes, upd_genes_meta)
+
+
+
+@dataclass(frozen=True)
 class SamplesIndexes:
-    """
-    Representes by_samples indexer, i.d. dataset.by_samples[[gene_ids]]
-    """
-    def __init__(self, dataset):
-        self.dataset = dataset
+
+    dataset: ExpressionDataset
 
     def collect(self, filter_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> ExpressionDataset:
         '''
@@ -323,12 +365,10 @@ class SamplesIndexes:
                f"<tr><td>{str(self.dataset.samples.shape[0])}</td></tr>" \
                f"</table>"
 
+@dataclass(frozen=True)
 class GenesIndexes:
-    """
-    Representes by_genes indexer, i.d. dataset.by_genes[[gene_ids]]
-    """
-    def __init__(self, dataset: ExpressionDataset):
-        self.dataset = dataset
+
+    dataset: ExpressionDataset
 
     def __getitem__(self, item) -> ExpressionDataset:
         items = [item] if type(item) == str else item

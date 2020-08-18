@@ -38,6 +38,21 @@ class Fold:
     def shap_absolute_sum_non_zero(self):
         return self.shap_absolute_sum[self.shap_absolute_sum > 0.0].sort_values(ascending=False)
 
+    def __repr__(self):
+        #to fix jupyter freeze (see https://github.com/ipython/ipython/issues/9771 )
+        return self._repr_html_()
+
+    def _repr_html_(self):
+        '''
+        Function to provide nice HTML outlook in jupyter lab notebooks
+        :return:
+        '''
+        return f"<table border='2'>" \
+               f"<caption>Fold<caption>" \
+               f"<tr><th>metrics</th><th>validation species</th><th>shap</th><th>nonzero shap</th><th>evals</th></tr>" \
+               f"<tr><td>{self.metrics}</td><td>str({self.validation_species})</td><td>{str(self.shap_dataframe.shape)}</td><td>{str(self.shap_absolute_sum_non_zero.shap)}</td><td>{self.eval}</td></tr>" \
+               f"</table>"
+
 
 from yspecies.results import FeatureResults
 
@@ -58,6 +73,7 @@ class ShapSelector(TransformerMixin):
         partitions, parameters = to_fit
         self.models = []
         self.evals = []
+        print(f"fitting models with seed {partitions.seed}")
         for i in range(0, partitions.n_folds - partitions.n_hold_out):
             X_train, X_test, y_train, y_test = partitions.split_fold(i)
             model, eval_results = self.regression_model(X_train, X_test, y_train, y_test, parameters,
@@ -122,25 +138,31 @@ class ShapSelector(TransformerMixin):
 
             X_test = partitions.partitions_x[i]
             y_test = partitions.partitions_y[i]
+            (X_train, y_train) = partitions.fold_train(i)
 
             # get trained model and record accuracy metrics
             model: Booster = self.models[i]  # just using already trained model
-            fold_predictions = model.predict(X_test, num_iteration=model.best_iteration)
+            fold_predictions = model.predict(X_test)
 
             if partitions.n_hold_out > 0:
-                fold_validation_predictions = model.predict(partitions.hold_out_x, num_iteration=model.best_iteration)
+                fold_validation_predictions = model.predict(partitions.hold_out_x)
 
-            explainer = shap.TreeExplainer(model)
+            explainer = shap.TreeExplainer(model, feature_perturbation=partitions.features.feature_perturbation, data=partitions.X)
             shap_values = explainer.shap_values(partitions.X)
+            best_iteration_num = model.best_iteration
+            current_evals = self.evals[i]
+            eval_last_num = len(current_evals) -1
+            metrics_num = best_iteration_num if best_iteration_num is not None and best_iteration_num < eval_last_num and best_iteration_num >= 0 else eval_last_num
+            best_metrics = current_evals[metrics_num] if current_evals[metrics_num].huber < current_evals[eval_last_num].huber else current_evals[eval_last_num]
             f = Fold(feature_weights=model.feature_importance(importance_type=partitions.features.importance_type),
                      shap_dataframe=pd.DataFrame(data=shap_values, index=partitions.X.index,
                                                  columns=partitions.X.columns),
-                     metrics=Metrics.calculate(y_test, fold_predictions),
+                     metrics=Metrics.calculate(y_test, fold_predictions, best_metrics.huber),
                      validation_metrics=Metrics.calculate(Y_hold_out,
                                                           fold_validation_predictions) if partitions.n_hold_out > 0 else None,
                      validation_species=partitions.validation_species[i],
                      booster=model,
-                     eval=self.evals[i]
+                     eval=best_metrics
                      )
             result.append(f)
 
@@ -161,9 +183,9 @@ class ShapSelector(TransformerMixin):
 
         X_transposed = partitions.X_T.values
 
-        select_by_gain = partitions.features.select_by == "gain"
+        select_by_shap = partitions.features.select_by == "shap"
 
-        gain_score_name = 'gain_score_to_' + partitions.features.to_predict if select_by_gain else 'shap_absolute_sum_to_' + partitions.features.to_predict
+        score_name = 'shap_absolute_sum_to_' + partitions.features.to_predict if select_by_shap else f'{partitions.features.importance_type}_score_to_' + partitions.features.to_predict
         kendal_tau_name = 'kendall_tau_to_' + partitions.features.to_predict
 
         # get features that have stable weight across self.bootstraps
@@ -172,7 +194,7 @@ class ShapSelector(TransformerMixin):
             non_zero_cols = 0
             cols = []
             for f in folds:
-                weight = f.feature_weights[i] if select_by_gain else folds[0].shap_absolute_sum[column]
+                weight = f.feature_weights[i] if select_by_shap else folds[0].shap_absolute_sum[column]
                 cols.append(weight)
                 if weight != 0:
                     non_zero_cols += 1
@@ -181,7 +203,7 @@ class ShapSelector(TransformerMixin):
                     i]:  # TODO: change from hard-coded ENSG checkup to something more meaningful
                     output_features_by_weight.append({
                         'ensembl_id': partitions.X.columns[i],
-                        gain_score_name: np.mean(cols),
+                        score_name: np.mean(cols),
                         # 'name': partitions.X.columns[i], #ensemble_data.gene_name_of_gene_id(X.columns[i]),
                         kendal_tau_name: kendalltau(shap_values_transposed[i], X_transposed[i], nan_policy='omit')[0]
                     })
@@ -190,5 +212,5 @@ class ShapSelector(TransformerMixin):
         if isinstance(partitions.data.genes_meta, pd.DataFrame):
             selected_features = partitions.data.genes_meta.drop(columns=["species"]) \
                 .join(selected_features, how="inner") \
-                .sort_values(by=[gain_score_name], ascending=False)
+                .sort_values(by=[score_name], ascending=False)
         return FeatureResults(selected_features, folds, partitions)
