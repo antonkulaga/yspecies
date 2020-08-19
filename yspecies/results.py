@@ -188,7 +188,7 @@ class FeatureSummary:
         return self.results[0].to_predict
 
     @cached_property
-    def metrics_average(self) -> pd.DataFrame:
+    def metrics_average(self) -> Metrics:
         return Metrics.average([r.metrics_average for r in self.results])
 
     @cached_property
@@ -201,25 +201,40 @@ class FeatureSummary:
 
     @property
     def MSE(self) -> float:
-        return self.metrics.MSE
+        return self.metrics_average.MSE
 
     @property
     def MAE(self) -> float:
-        return self.metrics.MAE
+        return self.metrics_average.MAE
 
     @property
     def R2(self) -> float:
-        return self.metrics.R2
+        return self.metrics_average.R2
+
+    @property
+    def huber(self) -> float:
+        return self.metrics_average.huber
     #intersection_percentage: float = 1.0
 
-    @cached_property
+    @property
+    def all_symbols(self):
+        return pd.concat([r.selected[["symbol"]] for r in self.results], axis=0).drop_duplicates()
+
+    @property
     def selected(self):
-        result: pd.DataFrame = self.results[0].selected[["symbol"]]
-        #prefix = if result.columns
+        first = self.results[0]
+        result: pd.DataFrame = first.selected[[]]#.selected[["symbol"]]
         pref: str = self.features.importance_type if len([c for c in self.results[0].selected.columns if self.features.importance_type in c])>0 else "shap"
         for i, r in enumerate(self.results):
             c_shap = f"{pref}_{i}"
             c_tau = f"kendall_tau_{i}"
             res = r.selected.rename(columns={f"{pref}_absolute_sum_to_{self.to_predict}": c_shap, f"{self.features.importance_type}_score_to_{self.to_predict}": c_shap, f"kendall_tau_to_{self.to_predict}": c_tau})
-            result = result.join(res[[c_shap, c_tau]], how="inner")
-        return result
+            res[f"in_fold_{i}"] = 1
+            result = result.join(res[[c_shap, c_tau]], how="outer")
+        pre_cols = result.columns.to_list()
+        result["repeats"] = result.count(axis=1) / 2.0
+        result["mean_shap"] = result[[col for col in result.columns if pref in col]].mean(skipna = True, axis=1)
+        result["mean_kendall_tau"] = result[[col for col in result.columns if "kendall_tau" in col]].mean(skipna = True, axis=1)
+        new_cols = ["repeats", "mean_shap", "mean_kendall_tau"]
+        cols = new_cols + pre_cols
+        return self.all_symbols.join(result[cols], how="right").sort_values(by=["repeats", "mean_shap", "mean_kendall_tau"], ascending=False)

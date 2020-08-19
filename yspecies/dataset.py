@@ -42,9 +42,9 @@ class ExpressionDataset:
         '''
         expressions =  pd.read_csv(expressions_path, sep=sep,  index_col="run")
         samples = pd.read_csv(samples_path, sep=sep,  index_col="run")
-        species = None if species_path is None else pd.read_csv(species_path, sep=sep, index_col="species")
-        genes = pd.read_csv(genes_path, sep=sep, index_col="Homo_sapiens")
-        genes_meta = None if genes_meta_path is None else pd.read_csv(genes_meta_path, sep=sep, index_col="ensembl_id") #species	gene	symbol
+        species = None if species_path is None else pd.read_csv(species_path, sep=sep, index_col=0)
+        genes = pd.read_csv(genes_path, sep=sep, index_col=0)
+        genes_meta = None if genes_meta_path is None else pd.read_csv(genes_meta_path, sep=sep, index_col=0) #species	gene	symbol
         return ExpressionDataset(name, expressions, samples, species, genes, genes_meta, validate=validate)
 
     @staticmethod
@@ -110,6 +110,7 @@ class ExpressionDataset:
     def by_genes(self) -> 'GenesIndexes':
         return GenesIndexes(self)
 
+    @cached_property
     def by_species(self) -> 'SpeciesIndexes':
         return SpeciesIndexes(self)
 
@@ -195,6 +196,13 @@ class ExpressionDataset:
         else:
             return self.by_genes[items]
 
+    def drop_not_expressed_in(self, species: Union[List[str], str], thresh: float = 0.001):
+        sps = species if isinstance(species, List) else [species]
+        ss = self.samples[self.samples["species"].isin(sps)]
+        sub_selection: pd.DataFrame = self.expressions.loc[ss.index].dropna(axis=1, thresh=thresh).copy()
+        return self.collect(lambda exp: exp.loc[:, sub_selection.columns])
+
+
     @property
     def shape(self):
         return [self.expressions.shape, self.genes.shape, self.samples.shape]
@@ -213,7 +221,7 @@ class ExpressionDataset:
         return f"<table border='2'>" \
                f"<caption>{self.name}<caption>" \
                f"<tr><th>expressions</th><th>genes</th><th>species</th><th>samples</th><th>Genes Metadata</th><th>Species Metadata</th></tr>" \
-               f"<tr><td>{str(self.expressions.shape)}</td><td>{str(self.genes.shape[0])}</td><td>{str(self.genes.shape[1]+1)}</td><td>{str(self.samples.shape[0])}</td><td>{gs}</td><td>{ss}</td></tr>" \
+               f"<tr><td>{str(self.expressions.shape)}</td><td>{str(self.genes.shape)}</td><td>{str(self.genes.shape[1]+1)}</td><td>{str(self.samples.shape[0])}</td><td>{gs}</td><td>{ss}</td></tr>" \
                f"</table>"
 
     def write(self, folder: Path or str,
@@ -249,27 +257,24 @@ class ExpressionDataset:
         print(f"written {self.name} dataset content to {str(folder)}")
         return folder
 
-    def drop_species_na(self, species: Union[List[str], str], thresh: float = 0.001):
-        sps = species if isinstance(species, List) else [species]
-        ss = self.samples[self.samples["species"].isin(sps)]
-        sub_selection: pd.DataFrame = self.expressions.loc[ss.index].dropna(axis=1, thresh=thresh).copy()
-        return self.collect(lambda exp: exp.loc[:, sub_selection.columns])
 
+    def dropna(self, thresh: float):
+        return self.collect(lambda exp: exp.dropna(thresh = thresh, axis = 1))
 
-    def collect(self, filter_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> 'ExpressionDataset':
+    def collect(self, collect_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> 'ExpressionDataset':
         '''
         Collects expressions and rewrites other dataframes
-        :param filter_fun:
+        :param collect_fun:
         :return:
         '''
-        upd_expressions: pd.DataFrame = filter_fun(self.expressions.copy())
+        upd_expressions: pd.DataFrame = collect_fun(self.expressions.copy())
         upd_genes = self.genes.loc[upd_expressions.columns].copy()#.reindex(upd_expressions.columns)
         upd_samples = self.samples.loc[upd_expressions.index].copy()#.reindex(upd_expressions.index)
         upd_genes_meta = None if self.genes_meta is None else self.genes_meta.loc[upd_genes.index].copy()
         species_index = upd_samples["species"].drop_duplicates()
         upd_species = None if self.species is None else self.species.loc[species_index].copy()
-        if upd_genes_meta is not None:
-            upd_genes_meta.index.name = "ensembl_id"
+        #if upd_genes_meta is not None:
+        #    upd_genes_meta.index.name = "ensembl_id"
         return ExpressionDataset(self.name, upd_expressions, upd_samples, upd_species, upd_genes, upd_genes_meta)
 
 @dataclass(frozen=True)
@@ -294,15 +299,20 @@ class SpeciesIndexes:
         assert self.dataset.species is not None, "You can use species index only if you have species annotation!"
         return self.collect(lambda df: self.dataset.species[filter_fun(df)])
 
+    def dropna(self, columns: Union[str, List[str]]) -> ExpressionDataset:
+        sub: List[str] = [columns] if isinstance(columns, str) else columns
+        return self.collect(lambda species: species.dropna(subset=sub))
+
     def collect(self, collect_fun: Callable[[pd.DataFrame], pd.DataFrame]):
         assert self.dataset.species is not None, "You can use species index only if you have species annotation!"
         upd_species = collect_fun(self.dataset.species.copy())
-        upd_samples: pd.DataFrame = self.dataset.samples[self.dataset.species.isin(upd_species.index)]
+        upd_samples: pd.DataFrame = self.dataset.samples[self.dataset.samples.species.isin(upd_species.index)].copy()
+        species_to_select = [s for s in upd_species.index.to_list() if s != self.dataset.genes.index.name]
         upd_expressions: pd.DataFrame = self.dataset.expressions.loc[upd_samples.index].copy()
-        upd_genes = self.dataset.genes[[s for s in upd_species.index.to_list() if s != self.dataset.genes.index.name]].copy()
+        upd_genes = self.dataset.genes[species_to_select].copy()
         upd_genes_meta: pd.DataFrame = None if self.dataset.genes_meta is None else self.dataset.genes_meta.loc[upd_genes.index]
-        if upd_genes_meta is not None:
-            upd_genes_meta.index.name = "ensembl_id"
+        #if upd_genes_meta is not None:
+        #    upd_genes_meta.index.name = "ensembl_id"
         #upd_genes_meta = None if self.dataset.genes_meta is None else upd_genes
         #upd_expressions = upd_expressions.reindex(upd_samples.index)
         return ExpressionDataset(self.dataset.name, upd_expressions, upd_samples, upd_species,  upd_genes, upd_genes_meta)
@@ -376,6 +386,9 @@ class GenesIndexes:
         upd_expressions = self.dataset.expressions[items]
         return ExpressionDataset(self.dataset.name, upd_expressions, upd_genes, self.dataset.samples)
 
+    def dropna(self, thresh: float):
+        return self.collect(lambda genes: genes.dropna(thresh=thresh))
+
 
     def _repr_html_(self):
         return f"<table border='2'>" \
@@ -384,13 +397,12 @@ class GenesIndexes:
                f"<tr><td>{str(self.dataset.genes.shape[0])}</td><td>{str(self.dataset.genes.shape[1]+1)}</td></tr>" \
                f"</table>"
 
-    def collect(self, filter_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> ExpressionDataset:
-        upd_genes: pd.DataFrame = filter_fun(self.dataset.genes.copy())
-        upd_expressions = self.dataset.expressions[upd_genes.index].copy()
-        upd_expressions = upd_expressions.loc[self.dataset.samples.index]
+    def collect(self, collect_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> ExpressionDataset:
+        upd_genes: pd.DataFrame = collect_fun(self.dataset.genes.copy())
+        upd_expressions = self.dataset.expressions[upd_genes.index].loc[self.dataset.samples.index].copy()
         upd_genes_meta = None if self.dataset.genes_meta is None else self.dataset.genes_meta.loc[upd_genes.index]
-        if upd_genes_meta is not None:
-            upd_genes_meta.index.name = "ensembl_id"
+        #if upd_genes_meta is not None:
+        #    upd_genes_meta.index.name = "ensembl_id"
         return ExpressionDataset(self.dataset.name, upd_expressions, self.dataset.samples, self.dataset.species, upd_genes, upd_genes_meta)
 
     def filter(self, filter_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> ExpressionDataset:

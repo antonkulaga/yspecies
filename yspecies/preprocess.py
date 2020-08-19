@@ -24,9 +24,6 @@ class FeatureSelection:
     select_by: str = "shap"
     importance_type: str = "gain"
     feature_perturbation: str = "tree_path_dependent"
-    clean_y_na: bool = True #cleans NA Y in species
-
-
 
     @property
     def has_categorical(self):

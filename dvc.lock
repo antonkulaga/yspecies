@@ -42,20 +42,22 @@ select_samples:
   - path: data/input/total_mtDNA_base_composition.csv
     md5: 3735cfc4beffb6c9356f908525345ee6
   - path: notebooks/select_samples.ipynb
-    md5: 553087164c9551c61bba6a9be28922d2
+    md5: 433c62e80ac97301617d732db10dab13
   - path: parameters/select_samples.yaml
     md5: ccd2ff9e431a861a3cabaf02eb5533ab
   outs:
-  - path: data/interim/selected/expressions.tsv
-    md5: ea8b027a11acb7da8223ed2ed4761509
-  - path: data/interim/selected/genes.tsv
-    md5: f410753d92961599f8da2370c6e25f42
-  - path: data/interim/selected/genes_meta.tsv
-    md5: cb271541402f3e1f66de865dce6c49ea
-  - path: data/interim/selected/samples.tsv
-    md5: 9812c3858cb3e1c524a19713aff488fe
-  - path: data/interim/selected/species.tsv
-    md5: 31ac984b2cb60c082f8023759a30d033
+  - path: data/interim/selected/gestation_days
+    md5: 03f0461ba9a1ca26f052203b948cd78b.dir
+  - path: data/interim/selected/lifespan
+    md5: 65f40bf267437f9a07131d706e0fed3d.dir
+  - path: data/interim/selected/mass_kg
+    md5: f36dbab9692c98800c464052e8dc85af.dir
+  - path: data/interim/selected/metabolic_rate
+    md5: 470ea1aeccc3bafa4b93268181360e6d.dir
+  - path: data/interim/selected/mtGC
+    md5: fa17686c777e1fad034b626b1efad921.dir
+  - path: data/interim/selected/temperature
+    md5: 4f4453d99a2c54fd9422e5e85c7fa5be.dir
   - path: data/output/counts/species_sample_count.tsv
     md5: 84c76b86cb61c5bf73c7f06c390dc064
   - path: data/output/counts/species_tissue_sample_count.tsv
@@ -63,7 +65,7 @@ select_samples:
   - path: data/output/counts/tissue_sample_count.tsv
     md5: 5a1441ea61f14d0242037f6a36c9d4a4
   - path: data/output/notebooks/select_samples.ipynb
-    md5: 62b9af37d4b5f0a9b2399652594b021b
+    md5: 7a899f4bf6a554887e4a19abf096dd8e
 results_intersections:
   cmd: papermill -f parameters/results_intersections.yaml  --progress-bar --report-mode
     notebooks/results_intersections.ipynb data/output/notebooks/results_intersections.ipynb

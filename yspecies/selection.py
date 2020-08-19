@@ -73,9 +73,10 @@ class ShapSelector(TransformerMixin):
         partitions, parameters = to_fit
         self.models = []
         self.evals = []
-        print(f"fitting models with seed {partitions.seed}")
+        print(f"===== fitting models with seed {partitions.seed} =====")
         for i in range(0, partitions.n_folds - partitions.n_hold_out):
             X_train, X_test, y_train, y_test = partitions.split_fold(i)
+            print(f"SEED: {partitions.seed} | FOLD: {i} | VALIDATION_SPECIES: {str(partitions.validation_species[i])}")
             model, eval_results = self.regression_model(X_train, X_test, y_train, y_test, parameters,
                                                         partitions.categorical_index, seed=partitions.seed)
             self.models.append(model)
@@ -102,7 +103,6 @@ class ShapSelector(TransformerMixin):
         stopping_callback = lgb.early_stopping(self.early_stopping_rounds)
         if seed is not None:
             parameters["seed"] = seed
-
         gbm = lgb.train(parameters,
                         lgb_train,
                         num_boost_round=num_boost_round,
