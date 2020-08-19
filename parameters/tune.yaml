@@ -4,5 +4,6 @@ folds: 5
 hold_outs: 1
 threads: 1
 species_in_validation: 3
+life_history: ["lifespan", "mass_g", "gestation_days", "mtGC", "metabolic_rate", "temperature"]
 not_validated_species: ""
 repeats: 10

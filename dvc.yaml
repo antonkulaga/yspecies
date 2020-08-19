@@ -10,38 +10,16 @@ stages:
       - data/input/total_mtDNA_base_composition.csv
       - notebooks/select_samples.ipynb
     outs:
-      - data/interim/selected/species.tsv
-      - data/interim/selected/samples.tsv
-      - data/interim/selected/genes.tsv
-      - data/interim/selected/expressions.tsv
-      - data/interim/selected/genes_meta.tsv
+      - data/interim/selected/gestation_days
+      - data/interim/selected/lifespan
+      - data/interim/selected/mass_kg
+      - data/interim/selected/metabolic_rate
+      - data/interim/selected/mtGC
+      - data/interim/selected/temperature
       - data/output/counts/species_sample_count.tsv
       - data/output/counts/tissue_sample_count.tsv
       - data/output/counts/species_tissue_sample_count.tsv
       - data/output/notebooks/select_samples.ipynb
-  tune:
-    cmd: python tune.py
-    params:
-      - parameters/tune.yaml: #not really using this yaml file yet
-        - name
-        - trials
-        - folds
-        - hold_outs
-        - threads
-        - species_in_validation
-        - not_validated_species
-        - repeats
-    deps:
-        - data/interim/selected/species.tsv
-        - data/interim/selected/samples.tsv
-        - data/interim/selected/genes.tsv
-        - data/interim/selected/expressions.tsv
-        - data/interim/selected/genes_meta.tsv
-    outs:
-        - data/metrics/lifespan/study.sqlite
-    metrics:
-        - data/metrics/lifespan/parameters.json
-        - data/metrics/lifespan/metrics.csv
   shap_selection:
     cmd: papermill -f parameters/shap_selection.yaml  --progress-bar --report-mode
       notebooks/shap_selection.ipynb data/output/notebooks/shap_selection.ipynb

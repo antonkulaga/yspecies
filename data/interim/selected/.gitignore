@@ -1,5 +1,6 @@
-/species.tsv
-/samples.tsv
-/genes.tsv
-/expressions.tsv
-/genes_meta.tsv
+/gestation_days
+/lifespan
+/mass_kg
+/metabolic_rate
+/mtGC
+/temperature
