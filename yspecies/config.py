@@ -5,8 +5,13 @@ Classes:
     Enums
     Locations
 """
-
+from typing import *
 from enum import Enum, auto
+
+from yspecies.dataset import ExpressionDataset
+from yspecies.preprocess import FeatureSelection
+from dataclasses import *
+
 class Normalize(Enum):
     log2 = "log2"
     standardize = "standardize"
@@ -202,3 +207,24 @@ class Parameters(Enum):
                        'drop_rate': 0.13171689004108006,
                        'metric': ['mae','mse', 'huber'],
                        }
+
+@dataclass(frozen=True)
+class DataLoader:
+
+    locations: Locations
+    selection: FeatureSelection
+
+    def load_life_history(self,
+                          life_history: List[str]=["lifespan", "mass_kg", "mtGC", "metabolic_rate", "temperature", "gestation_days"],
+                            exclude_min_max: bool = True
+                          ) -> Dict[str, Tuple[ExpressionDataset, FeatureSelection]]:
+        return OrderedDict([(trait, self.load_trait(trait)) for trait in life_history])
+
+    def load_trait(self, trait: str, protected_species: Union[bool, List[str]] = True) -> Tuple[ExpressionDataset, FeatureSelection]:
+        f = replace(self.selection, to_predict = trait)
+        data = ExpressionDataset.from_folder(self.locations.interim.selected / trait)
+        if isinstance(protected_species, List):
+            return (data, replace(f, not_validated_species = protected_species))
+        elif protected_species:
+            return (data, replace(f, not_validated_species = data.min_max_trait(trait)))
+        return (data, f)
