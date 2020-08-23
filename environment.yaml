@@ -7,7 +7,7 @@ channels:
 dependencies:
   - python=3.8
   - jupyterlab>=2.2.4
-  - dvc>=1.5.0
+  - dvc>=1.6.0
   - papermill>=2.1.2
   - anaconda-client>=1.7.2
   - conda-build>=3.19.2
@@ -20,10 +20,10 @@ dependencies:
   - statsmodels>=0.11.1
   - optuna>=2.0.0
   - click>=7.1.2
-  #- yspecies=0.2.2
+  #- yspecies=0.2.3
   - pip
   - pip:
-      - interpret>=0.2.0 #for experimental notebooks with explained boosting machines
+      - interpret>=0.2.1 #for experimental notebooks with explained boosting machines
 
 prefix: /data/miniconda3/envs/species
 

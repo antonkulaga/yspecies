@@ -92,11 +92,13 @@ class Locations:
         def __init__(self, base: Path):
             self.dir = base
             self.selected = self.dir / "selected"
+            self.optimization = self.dir / "optimization"
+
 
     class Metrics:
         def __init__(self, base: Path):
             self.dir = base
-            self.lifespan = self.dir / "lifespan"
+            self.optimization = self.dir / "optimization"
 
     class Output:
 
@@ -111,7 +113,6 @@ class Locations:
             self.dir = base
             self.external = Locations.Output.External(self.dir / "external")
             self.intersections = self.dir / "intersections"
-            self.optimization = self.dir / "optimization"
 
 
     def __init__(self, base: str):

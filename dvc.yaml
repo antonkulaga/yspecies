@@ -25,13 +25,38 @@ stages:
       notebooks/shap_selection.ipynb data/output/notebooks/shap_selection.ipynb
     deps:
       - parameters/shap_selection.yaml
-      - data/interim/selected/species.tsv
-      - data/interim/selected/samples.tsv
-      - data/interim/selected/genes.tsv
-      - data/interim/selected/expressions.tsv
-      - data/interim/selected/genes_meta.tsv
+      - data/interim/selected/gestation_days
+      - data/interim/selected/lifespan
+      - data/interim/selected/mass_kg
+      - data/interim/selected/metabolic_rate
+      - data/interim/selected/mtGC
+      - data/interim/selected/temperature
     outs:
       - data/output/notebooks/shap_selection.ipynb
+  tune:
+    cmd: python tune.py
+    params:
+      - parameters/tune.yaml:
+          - trait
+          - metrics
+          - trials
+          - folds
+          - hold_outs
+          - repeats
+          - not_validated_species
+          - threads
+          - debug_local
+    deps:
+      - data/interim/selected/gestation_days
+      - data/interim/selected/lifespan
+      - data/interim/selected/mass_kg
+      - data/interim/selected/metabolic_rate
+      - data/interim/selected/mtGC
+      - data/interim/selected/temperature
+    metrics:
+      - data/metrics/optimization/lifespan/0.json
+      - data/metrics/optimization/lifespan/1.json
+      - data/metrics/optimization/lifespan/2.json
   results_intersections:
     cmd: papermill -f parameters/results_intersections.yaml  --progress-bar --report-mode
       notebooks/results_intersections.ipynb data/output/notebooks/results_intersections.ipynb

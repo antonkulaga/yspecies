@@ -1,9 +1,11 @@
-name: "general_tuner"
+trait: "lifespan"
+metrics: "r2_huber_kendall"
 trials: 10
 folds: 5
 hold_outs: 1
-threads: 1
-species_in_validation: 3
+species_in_validation: 2
 life_history: ["lifespan", "mass_g", "gestation_days", "mtGC", "metabolic_rate", "temperature"]
-not_validated_species: ""
+not_validated_species: True
 repeats: 10
+threads: 1
+debug_local: True

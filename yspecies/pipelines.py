@@ -23,9 +23,9 @@ def make_shap_selection_pipeline(n_folds: int = 5, n_hold_out: int = 1, repeats:
                        'learning_rate': 0.054438364299744225,
                        'min_data_in_leaf': 7,
                        'drop_rate': 0.13171689004108006,
-                       'metric': ['mae','mse', 'huber'],
+                       'metric': ['mae', 'mse', 'huber'],
                        }
-    partition_params = PartitionParameters(n_folds, n_hold_out, 2, [],  42)
+    partition_params = PartitionParameters(n_folds, n_hold_out, 2,  42)
     partition_shap_pipe = Pipeline([
         ("partitioner", DataPartitioner()),
         ('prepare_for_partitioning', TupleWith(lgb_params)),
