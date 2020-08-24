@@ -189,7 +189,8 @@ def tune(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, repe
 @click.option('--debug_local', default=True, help="debug local")
 def tune_all(life_history: List[str], metrics: str, trials: int, folds: int, hold_outs: int, repeats: int, not_validated_species: Union[bool, List[str]], threads: int, debug_local: bool):
     for trait in life_history:
+        print(f"tunning {trait} with {trials}")
         tune(trait, metrics, trials, folds, hold_outs, repeats, not_validated_species, threads, debug_local)
 
 if __name__ == "__main__":
-    tune()
+    tune_all()
