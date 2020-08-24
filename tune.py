@@ -15,18 +15,12 @@ def get_local_path():
         print(sys.path)
     return local
 
-#@click.group(invoke_without_command=True)
-@click.command()
-@click.option('--trait', default="mtGC", help='trait name')
-@click.option('--metrics', default="r2_huber_kendall", help='metrics names')
-@click.option('--trials', default=200, help='Number of trials in hyper optimization')
-@click.option('--folds', default=5, help='Number of folds in cross-validation')
-@click.option('--hold_outs', default=1, help='Number of hold outs in cross-validation')
-@click.option('--repeats', default=5, help="number of times to repeat validation")
-@click.option('--not_validated_species', default=True, help="not_validated_species")
-@click.option('--threads', default=1, help="number of threads (1 by default). If you put -1 it will try to utilize all cores, however it can be dangerous memorywise")
-@click.option('--debug_local', default=True, help="debug local")
-def tune(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, repeats: int, not_validated_species: Union[bool, List[str]], threads: int, debug_local: bool):
+@click.group()
+@click.option('--debug/--no-debug', default=False)
+def cli(debug):
+    click.echo('Debug mode is %s' % ('on' if debug else 'off'))
+
+def tune_imp(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, repeats: int, not_validated_species: Union[bool, List[str]], threads: int, debug_local: bool):
     print(f"starting hyperparameters optimization script with {trials} trials, {folds} folds and {hold_outs} hold outs!")
     local = get_local_path()
     importance_type = "split"
@@ -42,7 +36,7 @@ def tune(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, repe
                   "min_data_in_leaf": 9,
                   "num_iterations": 150
                  }
-    life_history = ["lifespan", "mass_g", "mtGC", "metabolic_rate", "temperature", "gestation_days"]
+    life_history = ["lifespan", "mass_kg", "mtGC", "metabolic_rate", "temperature", "gestation_days"]
 
     from sklearn.pipeline import Pipeline
 
@@ -106,7 +100,7 @@ def tune(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, repe
     )
 
     study = optuna.multi_objective.study.create_study(directions=['maximize','minimize','maximize'], storage = storage, study_name = f"{trait}_{metrics}", load_if_exists = True)
-
+    study.get_pareto_front_trials()
 
     def objective_parameters(trial: Trial) -> dict:
         return {
@@ -177,8 +171,24 @@ def tune(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, repe
             json.dump(to_write, f, sort_keys=True, indent=4)
         print(f"FINISHED HYPER OPTIMIZING {trait}")
 
-@click.command()
-@click.option('--life_history', default=["lifespan", "mass_g", "gestation_days", "mtGC", "metabolic_rate", "temperature"], help='life history list')
+
+
+#@click.group(invoke_without_command=True)
+@cli.command()
+@click.option('--trait', default="lifespan", help='trait name')
+@click.option('--metrics', default="r2_huber_kendall", help='metrics names')
+@click.option('--trials', default=200, help='Number of trials in hyper optimization')
+@click.option('--folds', default=5, help='Number of folds in cross-validation')
+@click.option('--hold_outs', default=1, help='Number of hold outs in cross-validation')
+@click.option('--repeats', default=5, help="number of times to repeat validation")
+@click.option('--not_validated_species', default=True, help="not_validated_species")
+@click.option('--threads', default=1, help="number of threads (1 by default). If you put -1 it will try to utilize all cores, however it can be dangerous memorywise")
+@click.option('--debug_local', default=True, help="debug local")
+def tune(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, repeats: int, not_validated_species: Union[bool, List[str]], threads: int, debug_local: bool):
+    return tune_imp(trait, metrics, trials, folds, hold_outs, repeats, not_validated_species, threads, debug_local)
+
+@cli.command()
+@click.option('--life_history', default=["lifespan", "mass_kg", "gestation_days", "mtGC", "metabolic_rate", "temperature"], help='life history list')
 @click.option('--metrics', default="r2_huber_kendall", help='metrics names')
 @click.option('--trials', default=10, help='Number of trials in hyper optimization')
 @click.option('--folds', default=5, help='Number of folds in cross-validation')
@@ -187,10 +197,20 @@ def tune(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, repe
 @click.option('--not_validated_species', default=True, help="not_validated_species")
 @click.option('--threads', default=1, help="number of threads (1 by default). If you put -1 it will try to utilize all cores, however it can be dangerous memorywise")
 @click.option('--debug_local', default=True, help="debug local")
-def tune_all(life_history: List[str], metrics: str, trials: int, folds: int, hold_outs: int, repeats: int, not_validated_species: Union[bool, List[str]], threads: int, debug_local: bool):
+def tune_all(life_history: List[str],
+             metrics: str,
+             trials: int,
+             folds: int,
+             hold_outs: int,
+             repeats: int,
+             not_validated_species: Union[bool, List[str]],
+             threads: int,
+             debug_local: bool):
     for trait in life_history:
         print(f"tunning {trait} with {trials}")
-        tune(trait, metrics, trials, folds, hold_outs, repeats, not_validated_species, threads, debug_local)
+        tune_imp(trait, metrics, trials, folds, hold_outs, repeats, not_validated_species, threads, debug_local)
+
+
 
 if __name__ == "__main__":
-    tune_all()
+    cli()

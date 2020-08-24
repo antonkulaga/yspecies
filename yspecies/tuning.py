@@ -78,13 +78,46 @@ class MultiObjectiveResults:
     best_trials: List[trial.FrozenMultiObjectiveTrial]
     all_trials: List[trial.FrozenMultiObjectiveTrial]
 
+    @staticmethod
+    def from_study(study: MultiObjectiveStudy):
+        return MultiObjectiveResults(study.get_pareto_front_trials(), study.trials)
+
     @cached_property
     def best_params(self) -> List[Dict]:
         return [t.params for t in self.best_trials]
 
-    @cached_property
-    def all_params(self) -> List[Dict]:
-        return [t.params for t in self.all_trials]
+    def vals(self, i: int, in_all: bool = False):
+        return [t.values[i] for t in self.all_trials if t is not None and t.values[i] is not None] if in_all else [t.values[i] for t in self.best_trials if t is not None  and t.values[i] is not None]
+
+    def best_trial_by(self, i: int = 0, maximize: bool = True, in_all: bool = False):
+        num = np.argmax(self.vals(i, in_all)) if maximize else np.argmin(self.vals(i, in_all))
+        return self.best_trials[num]
+
+    def best_metrics_params_by(self, i: int = 0, maximize: bool = True, in_all: bool = False) -> Tuple:
+        trial = self.best_trial_by(i, maximize, in_all)
+        params = trial.params.copy()
+        params["objective"] = "regression"
+        params['metrics'] = ["l1", "l2", "huber"]
+        return (trial.values, params)
+
+    def best_trial_r2(self, in_all: bool = False):
+        return self.best_trial_by(0, True, in_all = in_all)
+
+    def best_metrics_params_r2(self, in_all: bool = False):
+        return self.best_metrics_params_by(0, True, in_all = in_all)
+
+    def best_trial_huber(self, in_all: bool = False):
+        return self.best_trial_by(1, False, in_all = in_all)
+
+    def best_metrics_params_huber(self, in_all: bool = False):
+        return self.best_metrics_params_by(1, False, in_all = in_all)
+
+    def best_trial_kendall_tau(self, in_all: bool = False):
+        return self.best_trial_by(2, False, in_all = in_all)
+
+    def best_metrics_params_kendall_tau(self, in_all: bool = False):
+        return self.best_metrics_params_by(2, True, in_all = in_all)
+
 
     @cached_property
     def results(self) -> Dict:

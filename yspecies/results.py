@@ -180,7 +180,8 @@ class FeatureSummary:
     def features(self):
         return self.results[0].partitions.features
 
-    def get_metrics(self) -> Metrics:
+    @property
+    def metrics(self) -> Metrics:
         return Metrics.to_dataframe([r.metrics for r in self.results])
 
     @property
@@ -195,9 +196,14 @@ class FeatureSummary:
     def kendall_tau_abs_mean(self):
         return np.mean(np.absolute(np.array([r.kendall_tau_abs_mean for r in self.results])))
 
-    @cached_property
+    @property
     def metrics(self) -> pd.DataFrame:
         return pd.concat([r.metrics for r in self.results])
+
+    @property
+    def hold_out_metrics(self) -> pd.DataFrame:
+        return pd.concat([r.hold_out_metrics for r in self.results])
+
 
     @property
     def MSE(self) -> float:
@@ -213,14 +219,19 @@ class FeatureSummary:
 
     @property
     def huber(self) -> float:
+
         return self.metrics_average.huber
     #intersection_percentage: float = 1.0
+
+
+    def symbols_repeated(self, min: int = 2):
+        return self.selected[self.selected["repeats"] > 1].symbol.to_list()
 
     @property
     def all_symbols(self):
         return pd.concat([r.selected[["symbol"]] for r in self.results], axis=0).drop_duplicates()
 
-    @property
+    @cached_property
     def selected(self):
         first = self.results[0]
         result: pd.DataFrame = first.selected[[]]#.selected[["symbol"]]
@@ -238,3 +249,10 @@ class FeatureSummary:
         new_cols = ["repeats", "mean_shap", "mean_kendall_tau"]
         cols = new_cols + pre_cols
         return self.all_symbols.join(result[cols], how="right").sort_values(by=["repeats", "mean_shap", "mean_kendall_tau"], ascending=False)
+
+    def _repr_html_(self):
+        return f"<table border='2'>" \
+               f"<caption><h3>Feature selection results</h3><caption>" \
+               f"<tr style='text-align:center'><th>selected</th><th>metrics</th><th>hold out metrics</th></tr>" \
+               f"<tr><td>{self.selected._repr_html_()}</th><th>{self.metrics._repr_html_()}</th><th>{self.hold_out_metrics._repr_html_()}</th></tr>" \
+               f"</table>"

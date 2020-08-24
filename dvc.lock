@@ -65,7 +65,7 @@ select_samples:
   - path: data/output/counts/tissue_sample_count.tsv
     md5: 5a1441ea61f14d0242037f6a36c9d4a4
   - path: data/output/notebooks/select_samples.ipynb
-    md5: f2b98fea3964b82ba5a85efac6bc6d63
+    md5: 9180d0511d85cc0c4544dd4930a64b69
 results_intersections:
   cmd: papermill -f parameters/results_intersections.yaml  --progress-bar --report-mode
     notebooks/results_intersections.ipynb data/output/notebooks/results_intersections.ipynb
