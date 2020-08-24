@@ -53,10 +53,6 @@ stages:
       - data/interim/selected/metabolic_rate
       - data/interim/selected/mtGC
       - data/interim/selected/temperature
-    metrics:
-      - data/metrics/optimization/lifespan/0.json
-      - data/metrics/optimization/lifespan/1.json
-      - data/metrics/optimization/lifespan/2.json
   results_intersections:
     cmd: papermill -f parameters/results_intersections.yaml  --progress-bar --report-mode
       notebooks/results_intersections.ipynb data/output/notebooks/results_intersections.ipynb

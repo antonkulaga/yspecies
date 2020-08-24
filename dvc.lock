@@ -156,10 +156,3 @@ tune:
       threads: 1
       trait: lifespan
       trials: 10
-  outs:
-  - path: data/metrics/optimization/lifespan/0.json
-    md5: f83301cfee182da35dc31d53924ff385
-  - path: data/metrics/optimization/lifespan/1.json
-    md5: 4e9f202e362d3fedee0a64c9c720ee9c
-  - path: data/metrics/optimization/lifespan/2.json
-    md5: 118d4963e7337ab3fda4d15a070b4826

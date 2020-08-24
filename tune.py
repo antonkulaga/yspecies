@@ -17,9 +17,9 @@ def get_local_path():
 
 #@click.group(invoke_without_command=True)
 @click.command()
-@click.option('--trait', default="lifespan", help='trait name')
+@click.option('--trait', default="mtGC", help='trait name')
 @click.option('--metrics', default="r2_huber_kendall", help='metrics names')
-@click.option('--trials', default=10, help='Number of trials in hyper optimization')
+@click.option('--trials', default=200, help='Number of trials in hyper optimization')
 @click.option('--folds', default=5, help='Number of folds in cross-validation')
 @click.option('--hold_outs', default=1, help='Number of hold outs in cross-validation')
 @click.option('--repeats', default=5, help="number of times to repeat validation")

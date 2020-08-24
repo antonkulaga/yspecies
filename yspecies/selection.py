@@ -84,7 +84,7 @@ class ShapSelector(TransformerMixin):
         return self
 
     def regression_model(self, X_train, X_test, y_train, y_test, parameters: Dict, categorical=None,
-                         num_boost_round: int = 150, seed: int = None) -> Booster:
+                         num_boost_round: int = 250, seed: int = None) -> Booster:
         '''
         trains a regression model
         :param X_train:
