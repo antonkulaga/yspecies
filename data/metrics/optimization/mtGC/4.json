@@ -1,0 +1,20 @@
+{
+    "metrics": {
+        "R2": 0.8203434257686381,
+        "huber": 0.40928659836945525,
+        "kendall_tau": 0.5864399546245772
+    },
+    "number": 127,
+    "params": {
+        "bagging_fraction": 0.4072955799831943,
+        "boosting_type": "gbdt",
+        "drop_rate": 0.1940931965454099,
+        "feature_fraction": 0.47730632475232454,
+        "lambda_l1": 2.042587283413711,
+        "lambda_l2": 2.5345924522022543,
+        "learning_rate": 0.08767683365074265,
+        "max_depth": 3,
+        "max_leaves": 22,
+        "min_data_in_leaf": 7
+    }
+}

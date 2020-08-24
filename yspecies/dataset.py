@@ -9,7 +9,7 @@ Classes:
 
 from pathlib import Path
 from typing import Callable, Union
-from typing import List
+from typing import List, Tuple
 from functools import cached_property
 import pandas as pd
 from dataclasses import dataclass
@@ -276,6 +276,9 @@ class ExpressionDataset:
         #if upd_genes_meta is not None:
         #    upd_genes_meta.index.name = "ensembl_id"
         return ExpressionDataset(self.name, upd_expressions, upd_samples, upd_species, upd_genes, upd_genes_meta)
+
+    def min_max_trait(self, trait: str) -> List:
+        return [self.species[trait].idxmin(), self.species[trait].idxmax()]
 
 @dataclass(frozen=True)
 class SpeciesIndexes:

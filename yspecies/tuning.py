@@ -75,11 +75,16 @@ class TuningResults:
 
 @dataclass(frozen=True)
 class MultiObjectiveResults:
-    trials: List[trial.FrozenMultiObjectiveTrial]
+    best_trials: List[trial.FrozenMultiObjectiveTrial]
+    all_trials: List[trial.FrozenMultiObjectiveTrial]
 
     @cached_property
-    def params(self) -> Dict:
-        return [t.params for t in self.trials]
+    def best_params(self) -> List[Dict]:
+        return [t.params for t in self.best_trials]
+
+    @cached_property
+    def all_params(self) -> List[Dict]:
+        return [t.params for t in self.all_trials]
 
     @cached_property
     def results(self) -> Dict:
@@ -108,8 +113,8 @@ class Tune(TransformerMixin):
         }
 
     parameters_space: Callable[[Trial], float] = None
-    study: MultiObjectiveStudy= field(default_factory=lambda: optuna.multi_objective.study.create_study(directions=['minimize', 'maximize']))
-    pareto_front_trials: MultiObjectiveResults = field(default_factory=lambda: None)
+    study: MultiObjectiveStudy= field(default_factory=lambda: optuna.multi_objective.study.create_study(directions=['maximize', 'minimize', 'maximize']))
+    multi_objective_results: MultiObjectiveResults = field(default_factory=lambda: None)
     threads: int = 1
 
 
@@ -123,11 +128,11 @@ class Tune(TransformerMixin):
             else:
                 return result
         self.study.optimize(objective, show_progress_bar=False, n_trials=self.n_trials, n_jobs=self.threads, gc_after_trial=True)
-        self.pareto_front_trials = MultiObjectiveResults(self.study.get_pareto_front_trials())
+        self.multi_objective_results = MultiObjectiveResults(self.study.get_pareto_front_trials(), self.study.get_trials())
         return self
 
     def transform(self, data: Any) -> MultiObjectiveResults:
-        return self.pareto_front_trials
+        return self.multi_objective_results
 
 
 

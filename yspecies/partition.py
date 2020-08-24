@@ -13,8 +13,6 @@ class PartitionParameters:
     n_folds: int
     n_hold_out: int
     species_in_validation: int = 2  # exclude species to validate them
-    not_validated_species: List[str] = field(
-        default_factory=lambda: [])  # ["Homo sapiens"] originally we wanted to exclude Human, but not now
     seed: int = None  # random seed for partitioning
 
 
@@ -195,7 +193,7 @@ class DataPartitioner(TransformerMixin):
                                                                            errors="ignore")
 
         if partition_params.species_in_validation > 0:
-            all_species = X.species[~X["species"].isin(partition_params.not_validated_species)].drop_duplicates().values
+            all_species = X.species[~X["species"].isin(features.not_validated_species)].drop_duplicates().values
             df_index = X.index
             # TODO: looks overly complicated (too many accumulating variables, refactor is needed)
             k_sets_indexes = []

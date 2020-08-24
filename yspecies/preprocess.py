@@ -7,7 +7,6 @@ from sklearn.preprocessing import LabelEncoder
 from yspecies.dataset import ExpressionDataset
 from yspecies.utils import *
 
-
 @dataclass(frozen=True)
 class FeatureSelection:
     '''
@@ -24,6 +23,7 @@ class FeatureSelection:
     select_by: str = "shap"
     importance_type: str = "gain"
     feature_perturbation: str = "tree_path_dependent"
+    not_validated_species: List[str] = field(default_factory=lambda: [])
 
     @property
     def has_categorical(self):
@@ -44,8 +44,8 @@ class FeatureSelection:
     def _repr_html_(self):
         return f"<table border='2'>" \
                f"<caption> Selected feature columns <caption>" \
-               f"<tr><th>Samples metadata</th><th>Species metadata</th><th>Genes</th><th>Predict label</th></tr>" \
-               f"<tr><td>{str(self.samples)}</td><td>{str(self.species)}</td><td>{'all' if self.genes is None else str(self.genes)}</td><td>{str(self.to_predict)}</td></tr>" \
+               f"<tr><th>Samples metadata</th><th>Species metadata</th><th>Genes</th><th>Predict label</th><th>not_validated species</th></tr>" \
+               f"<tr><td>{str(self.samples)}</td><td>{str(self.species)}</td><td>{'all' if self.genes is None else str(self.genes)}</td><td>{str(self.to_predict)}</td><td>{self.not_validated_species}</td></tr>" \
                f"</table>"
 
 
