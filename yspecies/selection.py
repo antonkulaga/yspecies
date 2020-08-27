@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import shap
 from lightgbm import Booster
+from loguru import logger
 from scipy.stats import kendalltau
 from sklearn.base import TransformerMixin
 
@@ -63,6 +64,7 @@ class ShapSelector(TransformerMixin):
     models: List = field(default_factory=lambda: [])
     evals: List = field(default_factory=lambda: [])
 
+    @logger.catch
     def fit(self, to_fit: Tuple[ExpressionPartitions, Dict], y=None) -> 'DataExtractor':
         """
 
@@ -73,10 +75,10 @@ class ShapSelector(TransformerMixin):
         partitions, parameters = to_fit
         self.models = []
         self.evals = []
-        print(f"===== fitting models with seed {partitions.seed} =====")
+        logger.info(f"===== fitting models with seed {partitions.seed} =====")
         for i in range(0, partitions.n_folds - partitions.n_hold_out):
             X_train, X_test, y_train, y_test = partitions.split_fold(i)
-            print(f"SEED: {partitions.seed} | FOLD: {i} | VALIDATION_SPECIES: {str(partitions.validation_species[i])}")
+            logger.info(f"SEED: {partitions.seed} | FOLD: {i} | VALIDATION_SPECIES: {str(partitions.validation_species[i])}")
             model, eval_results = self.regression_model(X_train, X_test, y_train, y_test, parameters,
                                                         partitions.categorical_index, seed=partitions.seed)
             self.models.append(model)
@@ -171,6 +173,7 @@ class ShapSelector(TransformerMixin):
             # interaction_values_out_of_fold = np.add(interaction_values_out_of_fold, interaction_values)
         return result
 
+    @logger.catch
     def transform(self, to_select_from: Tuple[ExpressionPartitions, Dict]) -> FeatureResults:
 
         partitions, parameters = to_select_from

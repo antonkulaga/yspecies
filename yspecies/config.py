@@ -49,6 +49,10 @@ from pathlib import Path
 
 class Locations:
 
+    @property
+    def logs(self):
+        return self.dir / "logs"
+
     class Genes:
         def __init__(self, base: Path):
             self.dir: Path = base
