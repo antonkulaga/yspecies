@@ -20,6 +20,7 @@ class FeatureResults:
     selected: pd.DataFrame
     folds: List[Fold]
     partitions: ExpressionPartitions = field(default_factory=lambda: None)
+    parameters: Dict = field(default_factory=lambda: None)
 
     @property
     def to_predict(self):
@@ -98,7 +99,7 @@ class FeatureResults:
         result.index.name = "run"
         return result
 
-    @logger.catch
+
     @cached_property
     def selected_extended(self):
         return self.selected.join(self.stable_shap_dataframe_T, how="left")
@@ -163,7 +164,6 @@ class FeatureResults:
         return self._plot_(self.shap_values[num], names, save, title, max_display,
                            layered_violin_max_num_bins, plot_type, color, axis_color, alpha)
 
-    @logger.catch
     def _repr_html_(self):
         return f"<table border='2'>" \
                f"<caption><h3>Feature selection results</h3><caption>" \
@@ -234,7 +234,13 @@ class FeatureSummary:
     def all_symbols(self):
         return pd.concat([r.selected[["symbol"]] for r in self.results], axis=0).drop_duplicates()
 
-    @logger.catch
+    def select_repeated(self, repeats: int):
+        return self.selected[self.selected.repeats > repeats]
+
+    def select_symbols(self, repeats: int = None):
+        return self.selected.symbol if repeats is None else self.select_repeated(repeats = repeats).symbol
+
+
     @cached_property
     def selected(self):
         first = self.results[0]
@@ -254,7 +260,6 @@ class FeatureSummary:
         cols = new_cols + pre_cols
         return self.all_symbols.join(result[cols], how="right").sort_values(by=["repeats", "mean_shap", "mean_kendall_tau"], ascending=False)
 
-    @logger.catch
     def _repr_html_(self):
         return f"<table border='2'>" \
                f"<caption><h3>Feature selection results</h3><caption>" \

@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Union, List, Tuple
 from dataclasses import replace
 import click
+from loguru import logger
 
 
 def get_local_path():
@@ -84,7 +85,7 @@ def tune_imp(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, 
 
     selection = FeatureSelection(
         samples = ["tissue","species"], #samples metadata to include
-        species =  [], #species metadata other then Y label to include
+        species = [], #species metadata other then Y label to include
         exclude_from_training = ["species"],  #exclude some fields from LightGBM training
         to_predict = trait, #column to predict
         categorical = ["tissue"],

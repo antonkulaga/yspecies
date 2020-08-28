@@ -12,6 +12,7 @@ from yspecies.utils import *
 import optuna
 from optuna import Study, Trial
 from optuna import multi_objective
+from loguru import logger
 from optuna.multi_objective import trial
 from optuna.multi_objective.study import MultiObjectiveStudy
 
@@ -146,7 +147,7 @@ class Tune(TransformerMixin):
         }
 
     parameters_space: Callable[[Trial], float] = None
-    study: MultiObjectiveStudy= field(default_factory=lambda: optuna.multi_objective.study.create_study(directions=['maximize', 'minimize', 'maximize']))
+    study: MultiObjectiveStudy=field(default_factory=lambda: optuna.multi_objective.study.create_study(directions=['maximize', 'minimize', 'maximize']))
     multi_objective_results: MultiObjectiveResults = field(default_factory=lambda: None)
     threads: int = 1
 

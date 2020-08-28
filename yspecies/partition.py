@@ -7,6 +7,8 @@ from yspecies.preprocess import EncodedFeatures, FeatureSelection
 from yspecies.utils import *
 import itertools
 
+from loguru import logger
+
 
 @dataclass(frozen=True)
 class PartitionParameters:

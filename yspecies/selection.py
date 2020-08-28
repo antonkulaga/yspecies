@@ -76,6 +76,7 @@ class ShapSelector(TransformerMixin):
         self.models = []
         self.evals = []
         logger.info(f"===== fitting models with seed {partitions.seed} =====")
+        logger.info(f"PARAMETERS:\n{parameters}")
         for i in range(0, partitions.n_folds - partitions.n_hold_out):
             X_train, X_test, y_train, y_test = partitions.split_fold(i)
             logger.info(f"SEED: {partitions.seed} | FOLD: {i} | VALIDATION_SPECIES: {str(partitions.validation_species[i])}")
@@ -210,10 +211,15 @@ class ShapSelector(TransformerMixin):
                         # 'name': partitions.X.columns[i], #ensemble_data.gene_name_of_gene_id(X.columns[i]),
                         kendal_tau_name: kendalltau(shap_values_transposed[i], X_transposed[i], nan_policy='omit')[0]
                     })
+        if(len(output_features_by_weight)==0):
+            logger.error(f"could not find genes which are in all folds,  creating empty dataframe instead!")
+            empty_selected = pd.DataFrame(columns=["symbol", score_name, kendal_tau_name])
+            return FeatureResults(empty_selected, folds, partitions, parameters)
         selected_features = pd.DataFrame(output_features_by_weight)
         selected_features = selected_features.set_index("ensembl_id")
         if isinstance(partitions.data.genes_meta, pd.DataFrame):
             selected_features = partitions.data.genes_meta.drop(columns=["species"]) \
                 .join(selected_features, how="inner") \
                 .sort_values(by=[score_name], ascending=False)
-        return FeatureResults(selected_features, folds, partitions)
+        #selected_features.index = "ensembl_id"
+        return FeatureResults(selected_features, folds, partitions, parameters)

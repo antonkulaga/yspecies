@@ -7,6 +7,8 @@ from sklearn.preprocessing import LabelEncoder
 from yspecies.dataset import ExpressionDataset
 from yspecies.utils import *
 
+from loguru import logger
+
 @dataclass(frozen=True)
 class FeatureSelection:
     '''
