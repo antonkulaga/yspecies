@@ -22,8 +22,18 @@ def cli(debug):
     click.echo('Debug mode is %s' % ('on' if debug else 'off'))
 
 def tune_imp(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, repeats: int, not_validated_species: Union[bool, List[str]], threads: int, debug_local: bool):
-    print(f"starting hyperparameters optimization script with {trials} trials, {folds} folds and {hold_outs} hold outs!")
+    from loguru import logger
+
     local = get_local_path()
+
+    from pathlib import Path
+    from yspecies.config import Locations
+
+    locations: Locations = Locations("./") if Path("./data").exists() else Locations("../")
+    logger.add(locations.logs / "tune_errors.log", backtrace=True, diagnose=True)
+    logger.add(locations.logs / "tune.log", rotation="12:00")     # New file is created each day at noon
+    logger.info(f"starting hyper-parameters optimization script with {trials} trials, {folds} folds and {hold_outs} hold outs!")
+
     importance_type = "split"
     lgb_params = {"bagging_fraction": 0.9522534844058304,
                   "boosting_type": "dart",
@@ -58,8 +68,6 @@ def tune_imp(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, 
     # ### Loading data ###
     # Let's load data from species/genes/expressions selected by select_samples.py notebook
 
-    from pathlib import Path
-    locations: Locations = Locations("./") if Path("./data").exists() else Locations("../")
 
     default_selection = FeatureSelection(
         samples = ["tissue","species"], #samples metadata to include
