@@ -118,6 +118,10 @@ shap_selection:
     md5: 9f1ca3ea434625790c4cab969e07aab7.dir
   - path: data/output/notebooks/shap_selection.ipynb
     md5: c48cb96cd95b4936a3adb043018a6d8c
+  - path: data/output/plots/stage_one_summary_lifespan.svg
+    md5: dbe5c9bbbbf06e6a62bf2f447b78010f
+  - path: data/output/plots/stage_two_untuned_summary_lifespan.svg
+    md5: f10b432adda8d0ef644b972515cfba24
 tuning:
   cmd: echo "work in progress!"
   deps:

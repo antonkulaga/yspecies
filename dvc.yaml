@@ -35,6 +35,8 @@ stages:
       - data/output/notebooks/shap_selection.ipynb
       - data/interim/stage_1/results_concatenated.tsv
       - data/interim/stage_2/input_data
+      - data/output/plots/stage_one_summary_lifespan.svg
+      - data/output/plots/stage_two_untuned_summary_lifespan.svg
   tune:
     cmd: python tune.py
     params:
