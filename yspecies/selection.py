@@ -181,7 +181,7 @@ class ShapSelector(TransformerMixin):
         folds = self.compute_folds(partitions)
         fold_shap_values = [f.shap_values for f in folds]
         # calculate shap values out of fold
-        mean_shap_values = np.mean(fold_shap_values, axis=0)
+        mean_shap_values = np.nanmean(fold_shap_values, axis=0)
         shap_values_transposed = mean_shap_values.T
         fold_number = partitions.n_cv_folds
 

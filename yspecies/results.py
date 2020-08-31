@@ -116,7 +116,7 @@ class FeatureResults:
 
     @cached_property
     def stable_shap_values(self):
-        return np.mean(self.shap_values, axis=0)
+        return np.nanmean(self.shap_values, axis=0)
 
     @cached_property
     def shap_dataframes(self) -> List[np.ndarray]:
@@ -189,6 +189,14 @@ class FeatureResults:
 class FeatureSummary:
     results: List[FeatureResults]
 
+    @property
+    def first(self) -> FeatureResults:
+        return self.results[0]
+
+    @cached_property
+    def feature_names(self) -> np.ndarray:
+        return self.first.feature_names
+
     @staticmethod
     def concat(results: Union[Dict[str, 'FeatureSummary'], List['FeatureSummary']], min_repeats: int):
         if isinstance(results, Dict):
@@ -239,7 +247,7 @@ class FeatureSummary:
 
     @cached_property
     def stable_shap_values(self):
-        return np.mean(self.shap_values, axis=0)
+        return np.nanmean(self.shap_values, axis=0)
 
     @property
     def MSE(self) -> float:
@@ -302,16 +310,16 @@ class FeatureSummary:
 
     def _plot_(self, shap_values: List[np.ndarray] or np.ndarray, gene_names: bool = True, save: Path = None,
                max_display=None, title=None, layered_violin_max_num_bins = 20,
-               plot_type=None, color=None, axis_color="#333333", alpha=1, class_names=None
+               plot_type=None, color=None, axis_color="#333333", alpha=1, class_names=None, plot_size = None
                ):  #TODO: make a mixin!
         #shap.summary_plot(shap_values, self.partitions.X, show=False)
         feature_names = None if gene_names is False else self.feature_names
-        shap.summary_plot(shap_values, self.partitions.X, feature_names=feature_names, show=False,
+        shap.summary_plot(shap_values, self.first.partitions.X, feature_names=feature_names, show=False,
                           max_display=max_display, title=title, layered_violin_max_num_bins=layered_violin_max_num_bins,
                           class_names=class_names,
                           # class_inds=class_inds,
                           plot_type=plot_type,
-                          color=color, axis_color=axis_color, alpha=alpha
+                          color=color, axis_color=axis_color, alpha=alpha, plot_size=plot_size
                           )
         fig = plt.gcf()
         if save is not None:
@@ -323,6 +331,6 @@ class FeatureSummary:
 
     def plot(self, gene_names: bool = True, save: Path = None,
              title=None,  max_display=100, layered_violin_max_num_bins = 20,
-             plot_type=None, color=None, axis_color="#333333", alpha=1, show=True, class_names=None):
+             plot_type=None, color=None, axis_color="#333333", alpha=1, show=True, class_names=None, plot_size = None):
         return self._plot_(self.stable_shap_values, gene_names, save, title, max_display,
-                           layered_violin_max_num_bins, plot_type, color, axis_color, alpha, class_names)
+                           layered_violin_max_num_bins, plot_type, color, axis_color, alpha, class_names, plot_size)
