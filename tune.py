@@ -1,9 +1,9 @@
 import sys
-from pathlib import Path
-from typing import Union, List, Tuple
 from dataclasses import replace
+from pathlib import Path
+from typing import *
+
 import click
-from loguru import logger
 
 
 def get_local_path():
@@ -35,31 +35,10 @@ def tune_imp(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, 
     logger.info(f"starting hyper-parameters optimization script with {trials} trials, {folds} folds and {hold_outs} hold outs!")
 
     importance_type = "split"
-    lgb_params = {"bagging_fraction": 0.9522534844058304,
-                  "boosting_type": "dart",
-                  "objective": "regression",
-                  "feature_fraction": 0.42236910941558053,
-                  "lambda_l1": 0.020847266580277746,
-                  "lambda_l2": 2.8448564854773326,
-                  "learning_rate": 0.11484015430016059,
-                  "max_depth": 3,
-                  "max_leaves": 35,
-                  "min_data_in_leaf": 9,
-                  "num_iterations": 150
-                 }
     life_history = ["lifespan", "mass_kg", "mtGC", "metabolic_rate", "temperature", "gestation_days"]
 
-    from sklearn.pipeline import Pipeline
-
-    from yspecies.workflow import Repeat, Collect
-    from yspecies.config import Locations, DataLoader
-    from yspecies.preprocess import FeatureSelection, DataExtractor
-    from yspecies.partition import DataPartitioner, PartitionParameters
-    from yspecies.selection import ShapSelector
-    from yspecies.tuning import Tune
-    from yspecies.results import FeatureSummary, FeatureResults
-    import optuna
-    from optuna import Trial
+    from yspecies.config import DataLoader
+    from yspecies.preprocess import FeatureSelection
 
     import pprint
     pp = pprint.PrettyPrinter(indent=4)
@@ -84,31 +63,41 @@ def tune_imp(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, 
     loader = DataLoader(locations, default_selection)
     selections = loader.load_life_history()
     to_select = selections[trait]
+    optimize(folds, hold_outs, locations, metrics, repeats, to_select, trait, trials)
+
+
+def optimize(folds, hold_outs, locations, metrics, repeats, to_select, trait, trials):
+    from sklearn.pipeline import Pipeline
+
+    from yspecies.workflow import Repeat, Collect
+    from yspecies.preprocess import FeatureSelection, DataExtractor
+    from yspecies.partition import DataPartitioner, PartitionParameters
+    from yspecies.selection import ShapSelector
+    from yspecies.tuning import Tune
+    from yspecies.results import FeatureSummary, FeatureResults
+    import optuna
+    from optuna import Trial
 
     # ## Setting up ShapSelector ##
-
     # Deciding on selection parameters (which fields to include, exclude, predict)
-
-    partition_params = PartitionParameters(folds, hold_outs, 2,  42)
-
+    partition_params = PartitionParameters(folds, hold_outs, 2, 42)
     selection = FeatureSelection(
-        samples = ["tissue","species"], #samples metadata to include
-        species = [], #species metadata other then Y label to include
-        exclude_from_training = ["species"],  #exclude some fields from LightGBM training
-        to_predict = trait, #column to predict
-        categorical = ["tissue"],
-        select_by = "shap",
-        importance_type = "split"
+        samples=["tissue", "species"],  # samples metadata to include
+        species=[],  # species metadata other then Y label to include
+        exclude_from_training=["species"],  # exclude some fields from LightGBM training
+        to_predict=trait,  # column to predict
+        categorical=["tissue"],
+        select_by="shap",
+        importance_type="split"
     )
-
-    url = f'sqlite:///' +str((locations.interim.optimization / f"{trait}.sqlite").absolute())
-    print('loading (if exists) study from '+url)
+    url = f'sqlite:///' + str((locations.interim.optimization / f"{trait}.sqlite").absolute())
+    print('loading (if exists) study from ' + url)
     storage = optuna.storages.RDBStorage(
         url=url
-        #engine_kwargs={'check_same_thread': False}
+        # engine_kwargs={'check_same_thread': False}
     )
-
-    study = optuna.multi_objective.study.create_study(directions=['maximize','minimize','maximize'], storage = storage, study_name = f"{trait}_{metrics}", load_if_exists = True)
+    study = optuna.multi_objective.study.create_study(directions=['maximize', 'minimize', 'maximize'], storage=storage,
+                                                      study_name=f"{trait}_{metrics}", load_if_exists=True)
     study.get_pareto_front_trials()
 
     def objective_parameters(trial: Trial) -> dict:
@@ -128,10 +117,9 @@ def tune_imp(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, 
             'drop_rate': trial.suggest_uniform('drop_rate', 0.1, 0.3),
             "verbose": -1
         }
+
     optimization_parameters = objective_parameters
-
     from yspecies.workflow import SplitReduce
-
     def side(i: int):
         print(i)
         return i
@@ -144,26 +132,24 @@ def tune_imp(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, 
     partition_and_cv = Pipeline(
         [
             ("prepare partition", prepare_partition),
-            ("shap_computation", ShapSelector()) #('crossvalidator', CrossValidator())
+            ("shap_computation", ShapSelector())  # ('crossvalidator', CrossValidator())
         ]
     )
 
-    def get_objectives(results:  List[FeatureResults]) -> Tuple[float, float, float]:
+    def get_objectives(results: List[FeatureResults]) -> Tuple[float, float, float]:
         summary = FeatureSummary(results)
         return (summary.metrics_average.R2, summary.metrics_average.huber, summary.kendall_tau_abs_mean)
 
-    partition_and_cv_repeat =  Pipeline([
-        ("repeat_cv_pipe", Repeat(partition_and_cv, repeats, lambda x, i: [x[0], x[1], i] )),
+    partition_and_cv_repeat = Pipeline([
+        ("repeat_cv_pipe", Repeat(partition_and_cv, repeats, lambda x, i: [x[0], x[1], i])),
         ("collect_mean", Collect(fold=lambda outputs: get_objectives(outputs)))
-        ]
-        )
-
+    ]
+    )
     p = Pipeline([
-         ('extractor', DataExtractor()),
-         ('tune', Tune(partition_and_cv_repeat, study=study, n_trials=trials, parameters_space=optimization_parameters))
+        ('extractor', DataExtractor()),
+        ('tune', Tune(partition_and_cv_repeat, study=study, n_trials=trials, parameters_space=optimization_parameters))
     ])
     from yspecies.tuning import MultiObjectiveResults
-
     results: MultiObjectiveResults = p.fit_transform(to_select)
     best = results.best_trials
     import json
@@ -176,10 +162,10 @@ def tune_imp(trait: str, metrics: str, trials: int, folds: int, hold_outs: int, 
         with open(path, 'w') as f:
             params = t.params
             values = t.values
-            to_write = {"number": t.number,"params": params, "metrics": {"R2":values[0], "huber": values[1], "kendall_tau": values[2]}}
+            to_write = {"number": t.number, "params": params,
+                        "metrics": {"R2": values[0], "huber": values[1], "kendall_tau": values[2]}}
             json.dump(to_write, f, sort_keys=True, indent=4)
         print(f"FINISHED HYPER OPTIMIZING {trait}")
-
 
 
 #@click.group(invoke_without_command=True)

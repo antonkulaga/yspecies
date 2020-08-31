@@ -33,6 +33,8 @@ stages:
       - data/interim/selected/temperature
     outs:
       - data/output/notebooks/shap_selection.ipynb
+      - data/interim/stage_1/results_concatenated.tsv
+      - data/interim/stage_2/input_data
   tune:
     cmd: python tune.py
     params:

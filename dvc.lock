@@ -112,6 +112,10 @@ shap_selection:
   - path: parameters/shap_selection.yaml
     md5: 43734a0f6f4865a78d36e5ea7e773176
   outs:
+  - path: data/interim/stage_1/results_concatenated.tsv
+    md5: aed0d7ed5a721fb780f90a2dccbd70e5
+  - path: data/interim/stage_2/input_data
+    md5: 9f1ca3ea434625790c4cab969e07aab7.dir
   - path: data/output/notebooks/shap_selection.ipynb
     md5: c48cb96cd95b4936a3adb043018a6d8c
 tuning:

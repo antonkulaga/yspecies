@@ -97,6 +97,8 @@ class Locations:
             self.dir = base
             self.selected = self.dir / "selected"
             self.optimization = self.dir / "optimization"
+            self.stage_one = self.dir / "stage_1"
+            self.stage_two = self.dir / "stage_2"
 
 
     class Metrics:

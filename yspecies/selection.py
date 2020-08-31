@@ -222,4 +222,6 @@ class ShapSelector(TransformerMixin):
                 .join(selected_features, how="inner") \
                 .sort_values(by=[score_name], ascending=False)
         #selected_features.index = "ensembl_id"
-        return FeatureResults(selected_features, folds, partitions, parameters)
+        results = FeatureResults(selected_features, folds, partitions, parameters)
+        logger.info(f"Metrics: \n{results.metrics_average}")
+        return results

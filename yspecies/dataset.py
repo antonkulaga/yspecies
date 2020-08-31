@@ -385,9 +385,7 @@ class GenesIndexes:
 
     def __getitem__(self, item) -> ExpressionDataset:
         items = [item] if type(item) == str else item
-        upd_genes = self.dataset.genes.loc[items]
-        upd_expressions = self.dataset.expressions[items]
-        return ExpressionDataset(self.dataset.name, upd_expressions, upd_genes, self.dataset.samples)
+        return self.collect(lambda gs: gs.loc[items])
 
     def dropna(self, thresh: float):
         return self.collect(lambda genes: genes.dropna(thresh=thresh))
@@ -401,7 +399,7 @@ class GenesIndexes:
                f"</table>"
 
     def collect(self, collect_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> ExpressionDataset:
-        upd_genes: pd.DataFrame = collect_fun(self.dataset.genes.copy())
+        upd_genes: pd.DataFrame = collect_fun(self.dataset.genes).copy()
         upd_expressions = self.dataset.expressions[upd_genes.index].loc[self.dataset.samples.index].copy()
         upd_genes_meta = None if self.dataset.genes_meta is None else self.dataset.genes_meta.loc[upd_genes.index]
         #if upd_genes_meta is not None:

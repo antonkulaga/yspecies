@@ -42,6 +42,16 @@ class FeatureResults:
     def metrics_average(self) -> Metrics:
         return yspecies.selection.Metrics.average([f.metrics for f in self.folds])
 
+    @property
+    def validation_metrics_average(self):
+        lst = [f.validation_metrics for f in self.folds if f.validation_metrics is not None]
+        return None if len(lst) == 0 else yspecies.selection.Metrics.average(lst)
+
+    @cached_property
+    def validation_metrics(self):
+        lst = [f.validation_metrics for f in self.folds if f.validation_metrics is not None]
+        return None if len(lst) == 0 else yspecies.selection.Metrics.to_dataframe(lst)
+
     @cached_property
     def metrics(self) -> Metrics:
         return yspecies.selection.Metrics.to_dataframe([f.metrics for f in self.folds])
@@ -179,6 +189,14 @@ class FeatureResults:
 class FeatureSummary:
     results: List[FeatureResults]
 
+    @staticmethod
+    def concat(results: Union[Dict[str, 'FeatureSummary'], List['FeatureSummary']], min_repeats: int):
+        if isinstance(results, Dict):
+            return FeatureSummary.concat([v for k, v in results.items()], min_repeats)
+        else:
+            return pd.concat([r.symbols_repeated(min_repeats) for r in results]).drop_duplicates()
+
+
     @property
     def features(self):
         return self.results[0].partitions.features
@@ -196,6 +214,10 @@ class FeatureSummary:
         return Metrics.average([r.metrics_average for r in self.results])
 
     @cached_property
+    def validation_metrics_average(self) -> Metrics:
+        return Metrics.average([r.validation_metrics for r in self.results])
+
+    @cached_property
     def kendall_tau_abs_mean(self):
         return np.mean(np.absolute(np.array([r.kendall_tau_abs_mean for r in self.results])))
 
@@ -204,9 +226,20 @@ class FeatureSummary:
         return pd.concat([r.metrics for r in self.results])
 
     @property
+    def validation_metrics(self) -> pd.DataFrame:
+        return pd.concat([r.validation_metrics for r in self.results])
+
+    @property
     def hold_out_metrics(self) -> pd.DataFrame:
         return pd.concat([r.hold_out_metrics for r in self.results])
 
+    @cached_property
+    def shap_values(self) -> List[np.ndarray]:
+        return [r.stable_shap_values for r in self.results]
+
+    @cached_property
+    def stable_shap_values(self):
+        return np.mean(self.shap_values, axis=0)
 
     @property
     def MSE(self) -> float:
@@ -227,15 +260,15 @@ class FeatureSummary:
     #intersection_percentage: float = 1.0
 
 
-    def symbols_repeated(self, min: int = 2):
-        return self.selected[self.selected["repeats"] > 1].symbol.to_list()
+    def select_repeated(self, min_repeats: int):
+        return self.selected[self.selected.repeats >= min_repeats]
+
+    def symbols_repeated(self, min_repeats: int = 2) -> pd.Series:
+        return self.select_repeated(min_repeats).symbol
 
     @property
     def all_symbols(self):
         return pd.concat([r.selected[["symbol"]] for r in self.results], axis=0).drop_duplicates()
-
-    def select_repeated(self, repeats: int):
-        return self.selected[self.selected.repeats > repeats]
 
     def select_symbols(self, repeats: int = None):
         return self.selected.symbol if repeats is None else self.select_repeated(repeats = repeats).symbol
@@ -266,3 +299,30 @@ class FeatureSummary:
                f"<tr style='text-align:center'><th>selected</th><th>metrics</th><th>hold out metrics</th></tr>" \
                f"<tr><td>{self.selected._repr_html_()}</th><th>{self.metrics._repr_html_()}</th><th>{self.hold_out_metrics._repr_html_()}</th></tr>" \
                f"</table>"
+
+    def _plot_(self, shap_values: List[np.ndarray] or np.ndarray, gene_names: bool = True, save: Path = None,
+               max_display=None, title=None, layered_violin_max_num_bins = 20,
+               plot_type=None, color=None, axis_color="#333333", alpha=1, class_names=None
+               ):  #TODO: make a mixin!
+        #shap.summary_plot(shap_values, self.partitions.X, show=False)
+        feature_names = None if gene_names is False else self.feature_names
+        shap.summary_plot(shap_values, self.partitions.X, feature_names=feature_names, show=False,
+                          max_display=max_display, title=title, layered_violin_max_num_bins=layered_violin_max_num_bins,
+                          class_names=class_names,
+                          # class_inds=class_inds,
+                          plot_type=plot_type,
+                          color=color, axis_color=axis_color, alpha=alpha
+                          )
+        fig = plt.gcf()
+        if save is not None:
+            from IPython.display import set_matplotlib_formats
+            set_matplotlib_formats('svg')
+            plt.savefig(save)
+        plt.close()
+        return fig
+
+    def plot(self, gene_names: bool = True, save: Path = None,
+             title=None,  max_display=100, layered_violin_max_num_bins = 20,
+             plot_type=None, color=None, axis_color="#333333", alpha=1, show=True, class_names=None):
+        return self._plot_(self.stable_shap_values, gene_names, save, title, max_display,
+                           layered_violin_max_num_bins, plot_type, color, axis_color, alpha, class_names)

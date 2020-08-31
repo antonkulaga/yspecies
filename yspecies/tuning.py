@@ -1,5 +1,7 @@
 import lightgbm as lgb
 from functools import cached_property
+
+from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 from sklearn.base import TransformerMixin
 from dataclasses import *
 
@@ -90,7 +92,7 @@ class MultiObjectiveResults:
     def vals(self, i: int, in_all: bool = False):
         return [t.values[i] for t in self.all_trials if t is not None and t.values[i] is not None] if in_all else [t.values[i] for t in self.best_trials if t is not None  and t.values[i] is not None]
 
-    def best_trial_by(self, i: int = 0, maximize: bool = True, in_all: bool = False):
+    def best_trial_by(self, i: int = 0, maximize: bool = True, in_all: bool = False) -> FrozenMultiObjectiveTrial:
         num = np.argmax(self.vals(i, in_all)) if maximize else np.argmin(self.vals(i, in_all))
         return self.best_trials[num]
 
@@ -101,19 +103,19 @@ class MultiObjectiveResults:
         params['metrics'] = ["l1", "l2", "huber"]
         return (trial.values, params)
 
-    def best_trial_r2(self, in_all: bool = False):
+    def best_trial_r2(self, in_all: bool = False) -> FrozenMultiObjectiveTrial:
         return self.best_trial_by(0, True, in_all = in_all)
 
     def best_metrics_params_r2(self, in_all: bool = False):
         return self.best_metrics_params_by(0, True, in_all = in_all)
 
-    def best_trial_huber(self, in_all: bool = False):
+    def best_trial_huber(self, in_all: bool = False) -> FrozenMultiObjectiveTrial:
         return self.best_trial_by(1, False, in_all = in_all)
 
     def best_metrics_params_huber(self, in_all: bool = False):
         return self.best_metrics_params_by(1, False, in_all = in_all)
 
-    def best_trial_kendall_tau(self, in_all: bool = False):
+    def best_trial_kendall_tau(self, in_all: bool = False) -> FrozenMultiObjectiveTrial:
         return self.best_trial_by(2, False, in_all = in_all)
 
     def best_metrics_params_kendall_tau(self, in_all: bool = False):
