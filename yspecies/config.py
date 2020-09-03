@@ -97,8 +97,6 @@ class Locations:
             self.dir = base
             self.selected = self.dir / "selected"
             self.optimization = self.dir / "optimization"
-            self.stage_one = self.dir / "stage_1"
-            self.stage_two = self.dir / "stage_2"
 
 
     class Metrics:
@@ -115,11 +113,14 @@ class Locations:
                 self.shap = self.dir / "shap"
                 self.causal = self.dir / "causal"
 
+
         def __init__(self, base: Path):
             self.dir = base
             self.external = Locations.Output.External(self.dir / "external")
             self.intersections = self.dir / "intersections"
-
+            self.stage_one = self.dir / "stage_1"
+            self.stage_two = self.dir / "stage_2"
+            self.plots = self.dir / "plots"
 
     def __init__(self, base: str):
         self.base: Path = Path(base)
@@ -235,3 +236,23 @@ class DataLoader:
         elif protected_species:
             return (data, replace(f, not_validated_species = data.min_max_trait(trait)))
         return (data, f)
+
+import optuna
+
+@dataclass
+class StudyLoader:
+
+
+    locations: Locations
+
+    metrics_to_improve = OrderedDict()
+
+    def load_study(self, trait: str, study_filename: str = None) -> optuna.multi_objective.study.MultiObjectiveStudy:
+        study_filename = trait if study_filename is None else study_filename
+        url = f'sqlite:///' +str((self.locations.interim.optimization / (study_filename+".sqlite")).absolute())
+        print('loading (if exists) study from '+url)
+        storage = optuna.storages.RDBStorage(
+            url=url
+            #engine_kwargs={'check_same_thread': False}
+        )
+        return optuna.multi_objective.study.create_study(directions=['maximize','minimize','maximize'], storage = storage, study_name = f"{trait}_r2_huber_kendall", load_if_exists = True)

@@ -164,3 +164,52 @@ tune:
       threads: 1
       trait: lifespan
       trials: 10
+stage_one:
+  cmd: papermill -f parameters/stage_one_shap_selection.yaml  --progress-bar --report-mode
+    notebooks/stage_one_shap_selection.ipynb data/output/notebooks/stage_one_shap_selection.ipynb
+  deps:
+  - path: data/interim/optimization/gestation_days.sqlite
+    md5: 8f2a409f95031e839202e4feb88e99e0
+  - path: data/interim/optimization/lifespan.sqlite
+    md5: 0fccb46daced4c6ed231490c25e46804
+  - path: data/interim/optimization/mass_kg.sqlite
+    md5: 23ddb28f55e3146b58e646e6e329e6b7
+  - path: data/interim/optimization/metabolic_rate.sqlite
+    md5: 247702368a8eab9c8824cac26a7f66e3
+  - path: data/interim/optimization/mtGC.sqlite
+    md5: 08ebe078dd5041f18945a571d3415054
+  - path: data/interim/optimization/temperature.sqlite
+    md5: 2fecb538190048e43e4718a7d19a6020
+  - path: parameters/stage_one_shap_selection.yaml
+    md5: 43734a0f6f4865a78d36e5ea7e773176
+  outs:
+  - path: data/interim/stage_1_results_concatenated.tsv
+    md5: 2e922f799744de8248c3b539af6638b3
+  - path: data/interim/stage_2_input
+    md5: b0178fad5de0608d946acc86bf7112cb.dir
+  - path: data/output/plots/stage_one_summary_lifespan.svg
+    md5: 8712def85f8717d2cbbf6976aa5472ed
+  - path: data/output/plots/stage_two_untuned_summary_lifespan.svg
+    md5: 1edbbb278fc54c5a96fb4753f21fcec1
+  - path: data/output/stage_1/gestation_days_selected.tsv
+    md5: 43f040ebfc90fda8107791f6731eecd2
+  - path: data/output/stage_1/lifespan_selected.tsv
+    md5: d9e3ee9baad595a14daf566e33d7a589
+  - path: data/output/stage_1/mass_kg_selected.tsv
+    md5: 71e0544c86ac4ae3d1f0c0e91778b81e
+  - path: data/output/stage_1/metabolic_rate_selected.tsv
+    md5: 76c5b25efe299863c7855de75a4f6cea
+  - path: data/output/stage_1/mtGC_selected.tsv
+    md5: 109de4a934396fa514b7ab5b9c1ee722
+  - path: data/output/stage_1/temperature_selected.tsv
+    md5: 92cd303520580935306680acb779c3b7
+stage_two:
+  cmd: papermill -f parameters/stage_two_shap_selection.yaml  --progress-bar --report-mode
+    notebooks/stage_two_shap_selection.ipynb data/output/notebooks/stage_two_shap_selection.ipynb
+  deps:
+  - path: data/interim/optimization/lifespan.sqlite
+    md5: 0fccb46daced4c6ed231490c25e46804
+  - path: data/interim/stage_1_results_concatenated.tsv
+    md5: 2e922f799744de8248c3b539af6638b3
+  - path: data/interim/stage_2_input
+    md5: b0178fad5de0608d946acc86bf7112cb.dir
