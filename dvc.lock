@@ -171,7 +171,7 @@ stage_one:
   - path: data/interim/optimization/gestation_days.sqlite
     md5: 8f2a409f95031e839202e4feb88e99e0
   - path: data/interim/optimization/lifespan.sqlite
-    md5: 0fccb46daced4c6ed231490c25e46804
+    md5: 0f73d0f933f828dcc5e287e6c9cacd5b
   - path: data/interim/optimization/mass_kg.sqlite
     md5: 23ddb28f55e3146b58e646e6e329e6b7
   - path: data/interim/optimization/metabolic_rate.sqlite
@@ -208,7 +208,7 @@ stage_two:
     notebooks/stage_two_shap_selection.ipynb data/output/notebooks/stage_two_shap_selection.ipynb
   deps:
   - path: data/interim/optimization/lifespan.sqlite
-    md5: 0fccb46daced4c6ed231490c25e46804
+    md5: 0f73d0f933f828dcc5e287e6c9cacd5b
   - path: data/interim/stage_1_results_concatenated.tsv
     md5: 2e922f799744de8248c3b539af6638b3
   - path: data/interim/stage_2_input
