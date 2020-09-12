@@ -32,6 +32,14 @@ class ExpressionPartitions:
     n_hold_out: int = 0  # how many partitions we hold for checking validation
     seed: int = None  # random seed (useful for debugging)
 
+    def write(self, folder: Path, name: str):
+        folder.mkdir(exist_ok=True)
+        for i, px in enumerate(self.partitions_x):
+            px.to_csv(folder / f"{name}_X_{str(i)}.tsv", sep="\t", index_label="reference_gene")
+        for py in enumerate(self.partitions_y):
+            py.to_csv(folder / f"{name}_Y_{str(i)}.tsv", sep="\t", index_label="reference_gene")
+        return folder
+
     @cached_property
     def n_folds(self) -> int:
         return len(self.indexes)
@@ -80,11 +88,11 @@ class ExpressionPartitions:
             yield (ind, ind)
 
     @cached_property
-    def partitions_x(self):
+    def partitions_x(self) -> List[pd.DataFrame]:
         return [self.X.iloc[pindex] for pindex in self.cv_indexes]
 
     @cached_property
-    def partitions_y(self):
+    def partitions_y(self) -> List[pd.DataFrame]:
         return [self.Y.iloc[pindex] for pindex in self.cv_indexes]
 
     @cached_property

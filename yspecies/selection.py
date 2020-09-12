@@ -13,6 +13,7 @@ from sklearn.base import TransformerMixin
 
 from yspecies.models import Metrics, BasicMetrics
 from yspecies.partition import ExpressionPartitions
+from pathlib import Path
 
 @dataclass(frozen=True)
 class Fold:

@@ -21,6 +21,23 @@ class FeatureResults:
     folds: List[Fold]
     partitions: ExpressionPartitions = field(default_factory=lambda: None)
     parameters: Dict = field(default_factory=lambda: None)
+    nan_as_zero: bool = True
+
+    def write(self, folder: Path, name: str, with_folds: bool = True, folds_name: str = None):
+        folds_name = name if folds_name is None else folds_name
+        folder.mkdir(exist_ok=True)
+        self.partitions.write(folder, name)
+        if with_folds:
+            self.write_folds(folder, folds_name)
+        return folder
+
+    def write_folds(self, folder: Path, name: str = "fold"):
+        folder.mkdir(exist_ok=True)
+        for i, f in enumerate(self.folds):
+            f.booster.save_model(folder / f"{name}_{str(i)}_model.txt")
+        self.metrics_df.to_csv(folder / f"{name}_{str(i)}_metrics.tsv", sep="\t")
+        self.hold_out_metrics.to_csv(folder / f"{name}_{str(i)}_metrics_hold_out.tsv", sep="\t")
+        return folder
 
     @property
     def to_predict(self):
@@ -57,11 +74,11 @@ class FeatureResults:
         return yspecies.selection.Metrics.to_dataframe([f.metrics for f in self.folds])
 
     @cached_property
-    def metrics_df(self):
+    def metrics_df(self) -> pd.DataFrame:
         return self.metrics.join(pd.Series(data=self.validation_species, name="validation_species"))
 
     @cached_property
-    def hold_out_metrics(self):
+    def hold_out_metrics(self) -> pd.DataFrame:
         return yspecies.selection.Metrics.to_dataframe([f.validation_metrics for f in self.folds]).join(pd.Series(data =self.partitions.hold_out_species * self.partitions.n_cv_folds, name="hold_out_species"))
 
 
@@ -116,7 +133,7 @@ class FeatureResults:
 
     @cached_property
     def stable_shap_values(self):
-        return np.nanmean(self.shap_values, axis=0)
+        return np.mean(np.nan_to_num(self.shap_values, 0.0), axis=0) if self.nan_as_zero else np.nanmean(self.shap_values, axis=0)
 
     @cached_property
     def shap_dataframes(self) -> List[np.ndarray]:
@@ -188,6 +205,35 @@ class FeatureResults:
 @dataclass
 class FeatureSummary:
     results: List[FeatureResults]
+    nan_as_zero: bool = True
+
+    def write(self, folder: Path, name: str, with_folds: bool = True, folds_name: str = None, repeat_prefix: str = None) -> Path:
+        folds_name = name if folds_name is None else folds_name
+        folder.mkdir(exist_ok=True)
+        for i, r in enumerate(self.results):
+            sub = str(i) if repeat_prefix is None else f"{repeat_prefix}_{i}"
+            repeat = folder / sub
+            repeat.mkdir(exist_ok=True)
+            r.write(repeat, name, with_folds=with_folds, folds_name=folds_name)
+        return folder
+
+    def write_folds(self, folder: Path, name: str, repeat_prefix: str = None) -> Path:
+        folder.mkdir(exist_ok=True)
+        for i, r in enumerate(self.results):
+            sub = str(i) if repeat_prefix is None else f"{repeat_prefix}_{i}"
+            repeat = folder / sub
+            repeat.mkdir(exist_ok=True)
+            r.partitions.write(repeat, name)
+        return folder
+
+    def write_partitions(self, folder: Path, name: str, repeat_prefix: str = None) -> Path:
+        folder.mkdir(exist_ok=True)
+        for i, r in enumerate(self.results):
+            sub = str(i) if repeat_prefix is None else f"{repeat_prefix}_{i}"
+            repeat = folder / sub
+            repeat.mkdir(exist_ok=True)
+            r.partitions.write(repeat, name)
+        return folder
 
     @property
     def first(self) -> FeatureResults:
@@ -247,7 +293,7 @@ class FeatureSummary:
 
     @cached_property
     def stable_shap_values(self):
-        return np.nanmean(self.shap_values, axis=0)
+        return np.mean(np.nan_to_num(self.shap_values, 0.0), axis=0) if self.nan_as_zero else np.nanmean(self.shap_values, axis=0)
 
     @property
     def MSE(self) -> float:
