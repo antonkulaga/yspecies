@@ -75,7 +75,7 @@ results_intersections:
   - path: data/output/external/causality/causal_relations_5_tissues_anton_species_5_bootstraps.csv
     md5: e3cf4199fa5234888c6fe0f388f87426
   - path: data/output/external/linear
-    md5: e5833432774d7815b8a1b88c066418dd.dir
+    md5: 024046bb0390f0d3bd374580359ebff4.dir
   - path: data/output/external/shap
     md5: fb35c5a65c49be61d7dacdc1fba3764b.dir
   - path: parameters/results_intersections.yaml
@@ -184,7 +184,7 @@ stage_one:
     md5: 43734a0f6f4865a78d36e5ea7e773176
   outs:
   - path: data/interim/stage_1_results_concatenated.tsv
-    md5: 2e922f799744de8248c3b539af6638b3
+    md5: 16f7b31f539afd48f0049ec2ba5ef8b5
   - path: data/interim/stage_2_input
     md5: b0178fad5de0608d946acc86bf7112cb.dir
   - path: data/output/plots/stage_one_summary_lifespan.svg
@@ -192,17 +192,17 @@ stage_one:
   - path: data/output/plots/stage_two_untuned_summary_lifespan.svg
     md5: 90fe8db41ee0ae9e1895b8b5eb867717
   - path: data/output/stage_1/gestation_days_selected.tsv
-    md5: 43f040ebfc90fda8107791f6731eecd2
+    md5: da73b2b1b840a5eeb2d277e6fefa5bd8
   - path: data/output/stage_1/lifespan_selected.tsv
-    md5: d9e3ee9baad595a14daf566e33d7a589
+    md5: a36c348e71daf24484b87b94ee5d5725
   - path: data/output/stage_1/mass_kg_selected.tsv
-    md5: 71e0544c86ac4ae3d1f0c0e91778b81e
+    md5: ffe0984cf0ab3ef17995478097bd8144
   - path: data/output/stage_1/metabolic_rate_selected.tsv
-    md5: 76c5b25efe299863c7855de75a4f6cea
+    md5: d597a904129d5998c83f7c4b799332db
   - path: data/output/stage_1/mtGC_selected.tsv
-    md5: 109de4a934396fa514b7ab5b9c1ee722
+    md5: c81d5a639f83b2d320b7cb706102e117
   - path: data/output/stage_1/temperature_selected.tsv
-    md5: 92cd303520580935306680acb779c3b7
+    md5: 27a26dd71442fb2c15359b6a15c97e1d
 stage_two:
   cmd: papermill -f parameters/stage_two_shap_selection.yaml  --progress-bar --report-mode
     notebooks/stage_two_shap_selection.ipynb data/output/notebooks/stage_two_shap_selection.ipynb
@@ -210,6 +210,11 @@ stage_two:
   - path: data/interim/optimization/lifespan.sqlite
     md5: 0f73d0f933f828dcc5e287e6c9cacd5b
   - path: data/interim/stage_1_results_concatenated.tsv
-    md5: 2e922f799744de8248c3b539af6638b3
+    md5: 16f7b31f539afd48f0049ec2ba5ef8b5
   - path: data/interim/stage_2_input
     md5: b0178fad5de0608d946acc86bf7112cb.dir
+  outs:
+  - path: data/output/plots/stage_two_summary_lifespan.svg
+    md5: 14985e4e4458f37ae3590e9c2f3775b2
+  - path: data/output/stage_2/lifespan.tsv
+    md5: 13fa77d179492ed5db10b785dd3a3df6
