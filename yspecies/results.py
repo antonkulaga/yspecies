@@ -34,7 +34,8 @@ class FeatureResults:
     def write_folds(self, folder: Path, name: str = "fold"):
         folder.mkdir(exist_ok=True)
         for i, f in enumerate(self.folds):
-            f.booster.save_model(folder / f"{name}_{str(i)}_model.txt")
+            p = folder / f"{name}_{str(i)}_model.txt"
+            f.booster.save_model(str(p))
         self.metrics_df.to_csv(folder / f"{name}_{str(i)}_metrics.tsv", sep="\t")
         self.hold_out_metrics.to_csv(folder / f"{name}_{str(i)}_metrics_hold_out.tsv", sep="\t")
         return folder

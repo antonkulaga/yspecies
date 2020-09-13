@@ -36,7 +36,7 @@ class ExpressionPartitions:
         folder.mkdir(exist_ok=True)
         for i, px in enumerate(self.partitions_x):
             px.to_csv(folder / f"{name}_X_{str(i)}.tsv", sep="\t", index_label="reference_gene")
-        for py in enumerate(self.partitions_y):
+        for i, py in enumerate(self.partitions_y):
             py.to_csv(folder / f"{name}_Y_{str(i)}.tsv", sep="\t", index_label="reference_gene")
         return folder
 
