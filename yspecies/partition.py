@@ -38,6 +38,8 @@ class ExpressionPartitions:
             px.to_csv(folder / f"{name}_X_{str(i)}.tsv", sep="\t", index_label="reference_gene")
         for i, py in enumerate(self.partitions_y):
             py.to_csv(folder / f"{name}_Y_{str(i)}.tsv", sep="\t", index_label="reference_gene")
+        self.hold_out_x.to_csv(folder / f"{name}_X_hold_out.tsv", sep="\t", index_label="reference_gene")
+        self.hold_out_y.to_csv(folder / f"{name}_Y_hold_out.tsv", sep="\t", index_label="reference_gene")
         return folder
 
     @cached_property

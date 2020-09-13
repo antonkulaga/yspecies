@@ -49,8 +49,9 @@ stages:
     deps:
       - data/interim/stage_1_results_concatenated.tsv
       - data/interim/optimization/lifespan.sqlite
-      - data/interim/stage_2_input
+      - data/interim/stage_2/input
     outs:
+      - data/interim/stage_2/partitions
       - data/output/stage_2/lifespan.tsv
       - data/output/plots/stage_two_summary_lifespan.svg
       #  - data/output/notebooks/stage_two_shap_selection.ipynb
