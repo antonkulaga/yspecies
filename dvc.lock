@@ -183,14 +183,16 @@ stage_one:
   - path: parameters/stage_one_shap_selection.yaml
     md5: 43734a0f6f4865a78d36e5ea7e773176
   outs:
-  - path: data/interim/stage_1_results_concatenated.tsv
+  - path: data/interim/stage_1/partitions
+    md5: 9c5756436c1afc3d902071ca13c7f945.dir
+  - path: data/interim/stage_1/results_concatenated.tsv
     md5: 16f7b31f539afd48f0049ec2ba5ef8b5
-  - path: data/interim/stage_2_input
+  - path: data/interim/stage_2/input
     md5: b0178fad5de0608d946acc86bf7112cb.dir
   - path: data/output/plots/stage_one_summary_lifespan.svg
-    md5: bc7a4d473c217a095cd157edc3224bdd
+    md5: b51c7c2f85810926e595c5f75fd89d23
   - path: data/output/plots/stage_two_untuned_summary_lifespan.svg
-    md5: 90fe8db41ee0ae9e1895b8b5eb867717
+    md5: d71cff6f67c6cbf4b4d6e2c2d08b6a50
   - path: data/output/stage_1/gestation_days_selected.tsv
     md5: da73b2b1b840a5eeb2d277e6fefa5bd8
   - path: data/output/stage_1/lifespan_selected.tsv
@@ -209,12 +211,14 @@ stage_two:
   deps:
   - path: data/interim/optimization/lifespan.sqlite
     md5: 0f73d0f933f828dcc5e287e6c9cacd5b
-  - path: data/interim/stage_1_results_concatenated.tsv
+  - path: data/interim/stage_1/results_concatenated.tsv
     md5: 16f7b31f539afd48f0049ec2ba5ef8b5
-  - path: data/interim/stage_2_input
+  - path: data/interim/stage_2/input
     md5: b0178fad5de0608d946acc86bf7112cb.dir
   outs:
+  - path: data/interim/stage_2/partitions
+    md5: e909903324553b7d89cf01d5367e578f.dir
   - path: data/output/plots/stage_two_summary_lifespan.svg
-    md5: 14985e4e4458f37ae3590e9c2f3775b2
+    md5: acbef034cee6fb722ba8ee78d289e416
   - path: data/output/stage_2/lifespan.tsv
     md5: 13fa77d179492ed5db10b785dd3a3df6
