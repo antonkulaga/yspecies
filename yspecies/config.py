@@ -97,6 +97,8 @@ class Locations:
             self.dir = base
             self.selected = self.dir / "selected"
             self.optimization = self.dir / "optimization"
+            self.stage_one = self.dir / "stage_1"
+            self.stage_two = self.dir / "stage_2"
 
 
     class Metrics:
@@ -120,7 +122,7 @@ class Locations:
             self.intersections = self.dir / "intersections"
             self.stage_one = self.dir / "stage_1"
             self.stage_two = self.dir / "stage_2"
-            self.plots = self.dir / "plots"
+            self.plots = self.dir / "plots"           
 
     def __init__(self, base: str):
         self.base: Path = Path(base)

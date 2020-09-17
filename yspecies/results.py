@@ -379,5 +379,5 @@ class FeatureSummary:
     def plot(self, gene_names: bool = True, save: Path = None,
              title=None,  max_display=100, layered_violin_max_num_bins = 20,
              plot_type=None, color=None, axis_color="#333333", alpha=1, show=True, class_names=None, plot_size = None):
-        return self._plot_(self.stable_shap_values, gene_names, save, title, max_display,
+        return self._plot_(self.stable_shap_values, gene_names, save, max_display, title,
                            layered_violin_max_num_bins, plot_type, color, axis_color, alpha, class_names, plot_size)
