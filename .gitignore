@@ -1,6 +1,7 @@
 *.class
 *.log
 logs
+.~*
 
 #VIM spegcific
 tags

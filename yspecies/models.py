@@ -122,7 +122,7 @@ class ResultsCV:
 
 
 @dataclass
-class CrossValidator(TransformerMixin):
+class BasicCrossValidator(TransformerMixin):
 
     evaluation: ResultsCV = None
     num_iterations: int = 200

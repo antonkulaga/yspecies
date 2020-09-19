@@ -15,18 +15,75 @@ from yspecies.models import Metrics, BasicMetrics
 from yspecies.partition import ExpressionPartitions
 from pathlib import Path
 
+
 @dataclass(frozen=True)
 class Fold:
     '''
     Class to contain information about the fold, useful for reproducibility
     '''
-    feature_weights: np.ndarray
-    shap_dataframe: pd.DataFrame
-    metrics: Metrics
-    validation_species: List = field(default_factory=lambda: [])
-    validation_metrics: Metrics = None
-    booster: Booster = None
-    eval: List[BasicMetrics] = field(default_factory=lambda: [])
+    num: int
+    model: Booster
+    partitions: ExpressionPartitions
+    current_evals: List[BasicMetrics] = field(default_factory=lambda: [])
+
+    @cached_property
+    def explainer(self) -> shap.TreeExplainer:
+        return shap.TreeExplainer(self.model, feature_perturbation=self.partitions.features.feature_perturbation, data=self.partitions.X)
+
+    @cached_property
+    def shap_values(self):
+        return self.explainer.shap_values(self.partitions.X)
+
+    @cached_property
+    def feature_weights(self) -> np.ndarray:
+        return self.model.feature_importance(importance_type=self.partitions.features.importance_type)
+
+    @cached_property
+    def shap_dataframe(self) -> pd.DataFrame:
+        return pd.DataFrame(data=self.shap_values, index=self.partitions.X.index, columns=self.partitions.X.columns)
+
+    @cached_property
+    def validation_species(self):
+        return self.partitions.validation_species[self.num]
+
+    @cached_property
+    def _fold_train(self):
+        return self.partitions.fold_train(self.num)
+
+    @property
+    def X_train(self):
+        return self._fold_train[0]
+
+    def y_train(self):
+        return self._fold_train[1]
+
+    @cached_property
+    def X_test(self):
+        return self.partitions.partitions_x[self.num]
+
+    @cached_property
+    def y_test(self):
+        return self.partitions.partitions_y[self.num]
+
+    @cached_property
+    def fold_predictions(self):
+        return self.model.predict(self.X_test)
+
+    @cached_property
+    def validation_metrics(self):
+        return self.model.predict(self.partitions.hold_out_x) if self.partitions.n_hold_out > 0 else None
+
+    @cached_property
+    def metrics(self):
+        return Metrics.calculate(self.y_test, self.fold_predictions, self.eval_metrics.huber)
+
+    @cached_property
+    def eval_metrics(self):
+        best_iteration_num = self.model.best_iteration
+        eval_last_num = len(self.current_evals) -1
+        metrics_num = best_iteration_num if best_iteration_num is not None and best_iteration_num < eval_last_num and best_iteration_num >= 0 else eval_last_num
+
+        return self.current_evals[metrics_num] if self.current_evals[metrics_num].huber < self.current_evals[eval_last_num].huber else self.current_evals[self.eval_last_num]
 
     @cached_property
     def shap_values(self) -> List[np.ndarray]:
@@ -58,15 +115,14 @@ class Fold:
 
 from yspecies.results import FeatureResults
 
-
 @dataclass
-class ShapSelector(TransformerMixin):
+class CrossValidator(TransformerMixin):
     early_stopping_rounds: int = 10
     models: List = field(default_factory=lambda: [])
     evals: List = field(default_factory=lambda: [])
 
     @logger.catch
-    def fit(self, to_fit: Tuple[ExpressionPartitions, Dict], y=None) -> 'DataExtractor':
+    def fit(self, to_fit: Tuple[ExpressionPartitions, Dict], y=None) -> 'CrossValidator':
         """
 
         :param to_fit: (partitions, parameters)
@@ -117,70 +173,24 @@ class ShapSelector(TransformerMixin):
                         )
         return gbm, BasicMetrics.parse_eval(evals_result)
 
-    def compute_folds(self, partitions: ExpressionPartitions) -> List[Fold]:
-        '''
-        Subfunction to compute weight_of_features, shap_values_out_of_fold, metrics_out_of_fold
-        :param partitions:
-        :return:
-        '''
-
-        # shap_values_out_of_fold = np.zeros()
-        # interaction_values_out_of_fold = [[[0 for i in range(len(X.values[0]))] for i in range(len(X.values[0]))] for z in range(len(X))]
-        # metrics = pd.DataFrame(np.zeros([folds, 3]), columns=["R^2", "MSE", "MAE"])
-        # .sum(axis=0)
+    @logger.catch
+    def transform(self, to_select_from: Tuple[ExpressionPartitions, Dict]) -> Tuple[List[Fold], Dict]:
+        partitions, parameters = to_select_from
         assert len(self.models) == partitions.n_cv_folds, "for each bootstrap there should be a model"
+        folds = [Fold(i, self.models[i], partitions, self.evals[i]) for i in range(0, partitions.n_cv_folds)]
+        return (folds, parameters)
 
-        result = []
+@dataclass
+class ShapSelector(TransformerMixin):
 
-        X_hold_out = partitions.hold_out_x
-        Y_hold_out = partitions.hold_out_y
-        cat = partitions.categorical_index if partitions.categorical_index is not None and len(
-            partitions.categorical_index) > 0 else "auto"
-        lgb_hold_out = lgb.Dataset(X_hold_out, Y_hold_out, categorical_feature=cat)
-
-        for i in range(0, partitions.n_cv_folds):
-
-            X_test = partitions.partitions_x[i]
-            y_test = partitions.partitions_y[i]
-            (X_train, y_train) = partitions.fold_train(i)
-
-            # get trained model and record accuracy metrics
-            model: Booster = self.models[i]  # just using already trained model
-            fold_predictions = model.predict(X_test)
-
-            if partitions.n_hold_out > 0:
-                fold_validation_predictions = model.predict(partitions.hold_out_x)
-
-            explainer = shap.TreeExplainer(model, feature_perturbation=partitions.features.feature_perturbation, data=partitions.X)
-            shap_values = explainer.shap_values(partitions.X)
-            best_iteration_num = model.best_iteration
-            current_evals = self.evals[i]
-            eval_last_num = len(current_evals) -1
-            metrics_num = best_iteration_num if best_iteration_num is not None and best_iteration_num < eval_last_num and best_iteration_num >= 0 else eval_last_num
-            best_metrics = current_evals[metrics_num] if current_evals[metrics_num].huber < current_evals[eval_last_num].huber else current_evals[eval_last_num]
-            f = Fold(feature_weights=model.feature_importance(importance_type=partitions.features.importance_type),
-                     shap_dataframe=pd.DataFrame(data=shap_values, index=partitions.X.index,
-                                                 columns=partitions.X.columns),
-                     metrics=Metrics.calculate(y_test, fold_predictions, best_metrics.huber),
-                     validation_metrics=Metrics.calculate(Y_hold_out,
-                                                          fold_validation_predictions) if partitions.n_hold_out > 0 else None,
-                     validation_species=partitions.validation_species[i],
-                     booster=model,
-                     eval=best_metrics
-                     )
-            result.append(f)
-
-            # interaction_values = explainer.shap_interaction_values(X)
-            # shap_values_out_of_fold = np.add(shap_values_out_of_fold, shap_values)
-            # interaction_values_out_of_fold = np.add(interaction_values_out_of_fold, interaction_values)
-        return result
+    def fit(self, folds_with_params: Tuple[List[Fold], Dict], y=None) -> 'ShapSelector':
+        return self
 
     @logger.catch
-    def transform(self, to_select_from: Tuple[ExpressionPartitions, Dict]) -> FeatureResults:
-
-        partitions, parameters = to_select_from
-        folds = self.compute_folds(partitions)
+    def transform(self, folds_with_params: Tuple[List[Fold], Dict]) -> FeatureResults:
+        folds, parameters = folds_with_params
         fold_shap_values = [f.shap_values for f in folds]
+        partitions = folds[0].partitions
         # calculate shap values out of fold
         mean_shap_values = np.nanmean(fold_shap_values, axis=0)
         shap_values_transposed = mean_shap_values.T

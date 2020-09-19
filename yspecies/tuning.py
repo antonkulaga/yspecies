@@ -1,22 +1,19 @@
-import lightgbm as lgb
+from dataclasses import *
 from functools import cached_property
 
+import lightgbm as lgb
+import optuna
+from optuna import Trial
+from optuna.multi_objective import trial
+from optuna.multi_objective.study import MultiObjectiveStudy
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 from sklearn.base import TransformerMixin
-from dataclasses import *
-
 from sklearn.pipeline import Pipeline
 
-from yspecies.models import Metrics, CrossValidator, ResultsCV
+from yspecies.models import Metrics, ResultsCV, BasicCrossValidator
 from yspecies.partition import ExpressionPartitions
 from yspecies.utils import *
 
-import optuna
-from optuna import Study, Trial
-from optuna import multi_objective
-from loguru import logger
-from optuna.multi_objective import trial
-from optuna.multi_objective.study import MultiObjectiveStudy
 
 @dataclass(frozen=True)
 class SpecializedTuningResults:
@@ -128,7 +125,7 @@ class MultiObjectiveResults:
 
 @dataclass(frozen=False)
 class Tune(TransformerMixin):
-    transformer: Union[Union[TransformerMixin, Pipeline], CrossValidator]
+    transformer: Union[Union[TransformerMixin, Pipeline], BasicCrossValidator]
     n_trials: int
     def objective_parameters(trial: Trial) -> dict:
         return {
