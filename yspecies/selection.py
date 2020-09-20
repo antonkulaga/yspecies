@@ -8,12 +8,10 @@ import pandas as pd
 import shap
 from lightgbm import Booster
 from loguru import logger
-from scipy.stats import kendalltau
 from sklearn.base import TransformerMixin
 
 from yspecies.models import Metrics, BasicMetrics
 from yspecies.partition import ExpressionPartitions
-from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -54,6 +52,7 @@ class Fold:
     def X_train(self):
         return self._fold_train[0]
 
+    @property
     def y_train(self):
         return self._fold_train[1]
 
@@ -68,26 +67,40 @@ class Fold:
     @cached_property
     def fold_predictions(self):
         return self.model.predict(self.X_test)
+    @cached_property
+    def hold_out_predictions(self):
+        return self.model.predict(self.partitions.hold_out_x) if self.partitions.n_hold_out > 0 else None
 
     @cached_property
-    def validation_metrics(self):
-        return self.model.predict(self.partitions.hold_out_x) if self.partitions.n_hold_out > 0 else None
+    def validation_metrics(self) -> Metrics:
+        #TODO: huber is wrong here
+        return Metrics.calculate(self.partitions.hold_out_y, self.hold_out_predictions, None)
 
     @cached_property
     def metrics(self):
         return Metrics.calculate(self.y_test, self.fold_predictions, self.eval_metrics.huber)
 
+    @property
+    def eval_last_num(self) -> int:
+        return len(self.current_evals) - 1
+
     @cached_property
     def eval_metrics(self):
         best_iteration_num = self.model.best_iteration
         eval_last_num = len(self.current_evals) -1
-        metrics_num = best_iteration_num if best_iteration_num is not None and best_iteration_num < eval_last_num and best_iteration_num >= 0 else eval_last_num
-
-        return self.current_evals[metrics_num] if self.current_evals[metrics_num].huber < self.current_evals[eval_last_num].huber else self.current_evals[self.eval_last_num]
+        metrics_num = best_iteration_num if best_iteration_num is not None and eval_last_num > best_iteration_num >= 0 else eval_last_num
+        if self.current_evals[metrics_num].huber < self.current_evals[eval_last_num].huber:
+            return self.current_evals[metrics_num]
+        else:
+            return self.current_evals[eval_last_num]
 
     @cached_property
     def shap_values(self) -> List[np.ndarray]:
-        return self.shap_dataframe.to_numpy(copy=True)
+        return self.explainer.shap_values(X = self.partitions.X, y = self.partitions.Y)#(self.partitions.X, self.partitions.Y)
+
+    @cached_property
+    def interaction_values(self):
+        return self.explainer.shap_interaction_values(self.partitions.X)
 
     @cached_property
     def shap_absolute_sum(self):
@@ -96,6 +109,10 @@ class Fold:
     @cached_property
     def shap_absolute_sum_non_zero(self):
         return self.shap_absolute_sum[self.shap_absolute_sum > 0.0].sort_values(ascending=False)
+
+    @cached_property
+    def expected_value(self):
+        return self.explainer.expected_value
 
     def __repr__(self):
         #to fix jupyter freeze (see https://github.com/ipython/ipython/issues/9771 )
@@ -109,11 +126,8 @@ class Fold:
         return f"<table border='2'>" \
                f"<caption>Fold<caption>" \
                f"<tr><th>metrics</th><th>validation species</th><th>shap</th><th>nonzero shap</th><th>evals</th></tr>" \
-               f"<tr><td>{self.metrics}</td><td>str({self.validation_species})</td><td>{str(self.shap_dataframe.shape)}</td><td>{str(self.shap_absolute_sum_non_zero.shap)}</td><td>{self.eval}</td></tr>" \
+               f"<tr><td>{self.metrics}</td><td>str({self.validation_species})</td><td>{str(self.shap_dataframe.shape)}</td><td>{str(self.shap_absolute_sum_non_zero.shape)}</td><td>{self.eval_metrics}</td></tr>" \
                f"</table>"
-
-
-from yspecies.results import FeatureResults
 
 @dataclass
 class CrossValidator(TransformerMixin):
@@ -179,60 +193,3 @@ class CrossValidator(TransformerMixin):
         assert len(self.models) == partitions.n_cv_folds, "for each bootstrap there should be a model"
         folds = [Fold(i, self.models[i], partitions, self.evals[i]) for i in range(0, partitions.n_cv_folds)]
         return (folds, parameters)
-
-@dataclass
-class ShapSelector(TransformerMixin):
-
-    def fit(self, folds_with_params: Tuple[List[Fold], Dict], y=None) -> 'ShapSelector':
-        return self
-
-    @logger.catch
-    def transform(self, folds_with_params: Tuple[List[Fold], Dict]) -> FeatureResults:
-        folds, parameters = folds_with_params
-        fold_shap_values = [f.shap_values for f in folds]
-        partitions = folds[0].partitions
-        # calculate shap values out of fold
-        mean_shap_values = np.nanmean(fold_shap_values, axis=0)
-        shap_values_transposed = mean_shap_values.T
-        fold_number = partitions.n_cv_folds
-
-        X_transposed = partitions.X_T.values
-
-        select_by_shap = partitions.features.select_by == "shap"
-
-        score_name = 'shap_absolute_sum_to_' + partitions.features.to_predict if select_by_shap else f'{partitions.features.importance_type}_score_to_' + partitions.features.to_predict
-        kendal_tau_name = 'kendall_tau_to_' + partitions.features.to_predict
-
-        # get features that have stable weight across self.bootstraps
-        output_features_by_weight = []
-        for i, column in enumerate(folds[0].shap_dataframe.columns):
-            non_zero_cols = 0
-            cols = []
-            for f in folds:
-                weight = f.feature_weights[i] if select_by_shap else folds[0].shap_absolute_sum[column]
-                cols.append(weight)
-                if weight != 0:
-                    non_zero_cols += 1
-            if non_zero_cols == fold_number:
-                if 'ENSG' in partitions.X.columns[
-                    i]:  # TODO: change from hard-coded ENSG checkup to something more meaningful
-                    output_features_by_weight.append({
-                        'ensembl_id': partitions.X.columns[i],
-                        score_name: np.mean(cols),
-                        # 'name': partitions.X.columns[i], #ensemble_data.gene_name_of_gene_id(X.columns[i]),
-                        kendal_tau_name: kendalltau(shap_values_transposed[i], X_transposed[i], nan_policy='omit')[0]
-                    })
-        if(len(output_features_by_weight)==0):
-            logger.error(f"could not find genes which are in all folds,  creating empty dataframe instead!")
-            empty_selected = pd.DataFrame(columns=["symbol", score_name, kendal_tau_name])
-            return FeatureResults(empty_selected, folds, partitions, parameters)
-        selected_features = pd.DataFrame(output_features_by_weight)
-        selected_features = selected_features.set_index("ensembl_id")
-        if isinstance(partitions.data.genes_meta, pd.DataFrame):
-            selected_features = partitions.data.genes_meta.drop(columns=["species"]) \
-                .join(selected_features, how="inner") \
-                .sort_values(by=[score_name], ascending=False)
-        #selected_features.index = "ensembl_id"
-        results = FeatureResults(selected_features, folds, partitions, parameters)
-        logger.info(f"Metrics: \n{results.metrics_average}")
-        return results

@@ -4,7 +4,7 @@ from sklearn.pipeline import Pipeline
 
 from yspecies.partition import DataPartitioner, PartitionParameters
 from yspecies.preprocess import DataExtractor
-from yspecies.results import FeatureSummary
+from yspecies.explanations import FeatureSummary
 from yspecies.selection import ShapSelector
 from yspecies.utils import *
 from yspecies.workflow import TupleWith, Repeat, Collect

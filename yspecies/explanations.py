@@ -1,15 +1,20 @@
-import matplotlib.pyplot as plt
-from loguru import logger
-from more_itertools import flatten
-from functools import cached_property
 from dataclasses import *
+from functools import cached_property
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import shap
+from more_itertools import flatten
+from sklearn.base import TransformerMixin
 
 import yspecies
-from yspecies.selection import Fold
-from yspecies.utils import *
+from yspecies.models import Metrics
 from yspecies.partition import ExpressionPartitions
-from yspecies.models import Metrics, BasicMetrics
+from yspecies.utils import *
+from loguru import logger
+from yspecies.selection import Fold
+
+from scipy.stats import kendalltau
 
 @dataclass(frozen=True)
 class FeatureResults:
@@ -49,7 +54,7 @@ class FeatureResults:
         return self.selected[f"kendall_tau_to_{self.to_predict}"].abs().mean()
 
     @property
-    def head(self) -> Fold:
+    def head(self):
         return self.folds[0]
 
     @cached_property
@@ -80,7 +85,8 @@ class FeatureResults:
 
     @cached_property
     def hold_out_metrics(self) -> pd.DataFrame:
-        return yspecies.selection.Metrics.to_dataframe([f.validation_metrics for f in self.folds]).join(pd.Series(data =self.partitions.hold_out_species * self.partitions.n_cv_folds, name="hold_out_species"))
+        return yspecies.selection.Metrics.to_dataframe([f.validation_metrics for f in self.folds])\
+            .join(pd.Series(data =self.partitions.hold_out_species * self.partitions.n_cv_folds, name="hold_out_species"))
 
 
     def __repr__(self):
@@ -133,8 +139,13 @@ class FeatureResults:
         return self.selected.join(self.stable_shap_dataframe_T, how="left")
 
     @cached_property
-    def stable_shap_values(self):
+    def stable_shap_values(self) -> np.ndarray:
         return np.mean(np.nan_to_num(self.shap_values, 0.0), axis=0) if self.nan_as_zero else np.nanmean(self.shap_values, axis=0)
+
+    @cached_property
+    def stable_interaction_values(self):
+        return np.mean(np.nan_to_num(self.interaction_values, 0.0), axis=0) if self.nan_as_zero else np.nanmean(self.interaction_values, axis=0)
+
 
     @cached_property
     def shap_dataframes(self) -> List[np.ndarray]:
@@ -145,8 +156,31 @@ class FeatureResults:
         return [f.shap_values for f in self.folds]
 
     @cached_property
+    def interaction_values(self) -> List[np.ndarray]:
+        return [f.interaction_values for f in self.folds]
+
+    @cached_property
     def feature_names(self):
-        return self.partitions.data.genes_meta["symbol"].values
+        gene_names = self.partitions.data.genes_meta["symbol"].values
+        col = self.partitions.data.X.columns[-1]
+        return np.append(gene_names, col) if "encoded" in col else gene_names
+
+    @cached_property
+    def expected_values_mean(self):
+        return np.mean([f.expected_value for f in self.folds])
+
+    @cached_property
+    def expected_values(self):
+        return [f.expected_value for f in self.folds]
+
+    def make_figure(self, save: Path):
+        fig = plt.gcf()
+        if save is not None:
+            from IPython.display import set_matplotlib_formats
+            set_matplotlib_formats('svg')
+            plt.savefig(save)
+        plt.close()
+        return fig
 
     def _plot_(self, shap_values: List[np.ndarray] or np.ndarray, gene_names: bool = True, save: Path = None,
                max_display=None, title=None, layered_violin_max_num_bins = 20,
@@ -161,13 +195,33 @@ class FeatureResults:
                           plot_type=plot_type,
                           color=color, axis_color=axis_color, alpha=alpha
                           )
-        fig = plt.gcf()
-        if save is not None:
-            from IPython.display import set_matplotlib_formats
-            set_matplotlib_formats('svg')
-            plt.savefig(save)
-        plt.close()
-        return fig
+        return self.make_figure(save)
+
+    def _plot_decision_(self, expected_value: float, shap_values: List[np.ndarray] or np.ndarray, gene_names: bool = True, save: Path = None):
+        #shap.summary_plot(shap_values, self.partitions.X, show=False)
+        feature_names = None if gene_names is False else self.feature_names
+        min_max = (self.partitions.data.y.min(), self.partitions.data.y.max())
+        shap.decision_plot(expected_value, shap_values, xlim=min_max,  feature_names=feature_names.tolist(), show=False)
+        return self.make_figure(save)
+
+    def plot_decision(self, save: Path = None):
+        return self._plot_decision_(self.expected_values_mean, self.stable_shap_values, True, save)
+
+    def plot_fold_decision(self, num: int):
+        assert num < len(self.folds), "index should be withing folds range!"
+        f = self.folds[num]
+        self._plot_decision_(f.expected_value, f.shap_values)
+
+    def plot_dependency(self, feature: str, interaction_index:str = "auto", save: Path = None):
+        shap.dependence_plot(feature, self.stable_shap_values, self.partitions.X, feature_names=self.feature_names, interaction_index=interaction_index)
+        return self.make_figure(save)
+
+    def plot_interactions(self, save: Path = None):
+        return self._plot_decision_(self.expected_values_mean, self.stable_interaction_values, True, save)
+
+    def plot_fold_interactions(self, num: int, gene_names: bool = True, save: Path = None):
+        f = self.folds[num]
+        return self._plot_decision_(f.expected_value, f.interaction_values, gene_names, save)
 
     def plot(self, gene_names: bool = True, save: Path = None,
              title=None,  max_display=100, layered_violin_max_num_bins = 20,
@@ -377,7 +431,66 @@ class FeatureSummary:
         return fig
 
     def plot(self, gene_names: bool = True, save: Path = None,
-             title=None,  max_display=100, layered_violin_max_num_bins = 20,
-             plot_type=None, color=None, axis_color="#333333", alpha=1, show=True, class_names=None, plot_size = None):
+             max_display=50, title=None, plot_size = 0.5, layered_violin_max_num_bins = 20,
+             plot_type=None, color=None, axis_color="#333333", alpha=1, class_names=None):
         return self._plot_(self.stable_shap_values, gene_names, save, max_display, title,
-                           layered_violin_max_num_bins, plot_type, color, axis_color, alpha, class_names, plot_size)
+                           layered_violin_max_num_bins, plot_type, color, axis_color, alpha, class_names = class_names, plot_size=plot_size)
+
+
+@dataclass
+class ShapSelector(TransformerMixin):
+
+    def fit(self, folds_with_params: Tuple[List[Fold], Dict], y=None) -> 'ShapSelector':
+        return self
+
+    @logger.catch
+    def transform(self, folds_with_params: Tuple[List[Fold], Dict]) -> FeatureResults:
+        folds, parameters = folds_with_params
+        fold_shap_values = [f.shap_values for f in folds]
+        partitions = folds[0].partitions
+        # calculate shap values out of fold
+        mean_shap_values = np.nanmean(fold_shap_values, axis=0)
+        shap_values_transposed = mean_shap_values.T
+        fold_number = partitions.n_cv_folds
+
+        X_transposed = partitions.X_T.values
+
+        select_by_shap = partitions.features.select_by == "shap"
+
+        score_name = 'shap_absolute_sum_to_' + partitions.features.to_predict if select_by_shap else f'{partitions.features.importance_type}_score_to_' + partitions.features.to_predict
+        kendal_tau_name = 'kendall_tau_to_' + partitions.features.to_predict
+
+        # get features that have stable weight across self.bootstraps
+        output_features_by_weight = []
+        for i, column in enumerate(folds[0].shap_dataframe.columns):
+            non_zero_cols = 0
+            cols = []
+            for f in folds:
+                weight = f.feature_weights[i] if select_by_shap else folds[0].shap_absolute_sum[column]
+                cols.append(weight)
+                if weight != 0:
+                    non_zero_cols += 1
+            if non_zero_cols == fold_number:
+                if 'ENSG' in partitions.X.columns[
+                    i]:  # TODO: change from hard-coded ENSG checkup to something more meaningful
+                    output_features_by_weight.append({
+                        'ensembl_id': partitions.X.columns[i],
+                        score_name: np.mean(cols),
+                        # 'name': partitions.X.columns[i], #ensemble_data.gene_name_of_gene_id(X.columns[i]),
+                        kendal_tau_name: kendalltau(shap_values_transposed[i], X_transposed[i], nan_policy='omit')[0]
+                    })
+        if(len(output_features_by_weight)==0):
+            logger.error(f"could not find genes which are in all folds,  creating empty dataframe instead!")
+            empty_selected = pd.DataFrame(columns=["symbol", score_name, kendal_tau_name])
+            return FeatureResults(empty_selected, folds, partitions, parameters)
+        selected_features = pd.DataFrame(output_features_by_weight)
+        selected_features = selected_features.set_index("ensembl_id")
+        if isinstance(partitions.data.genes_meta, pd.DataFrame):
+            selected_features = partitions.data.genes_meta.drop(columns=["species"]) \
+                .join(selected_features, how="inner") \
+                .sort_values(by=[score_name], ascending=False)
+        #selected_features.index = "ensembl_id"
+        results = FeatureResults(selected_features, folds, partitions, parameters)
+        logger.info(f"Metrics: \n{results.metrics_average}")
+        return results
+# from shap import Explanation

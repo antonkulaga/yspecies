@@ -1,13 +1,12 @@
 """
 Just utility functions
 """
-from pathlib import Path
+from dataclasses import dataclass
 from typing import *
 
-import pandas as pd
-from IPython.display import HTML, display
-from dataclasses import dataclass
 import numpy as np
+import pandas as pd
+
 
 @dataclass
 class Table:

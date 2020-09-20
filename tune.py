@@ -74,7 +74,7 @@ def optimize(folds, hold_outs, locations, metrics, repeats, to_select, trait, tr
     from yspecies.partition import DataPartitioner, PartitionParameters
     from yspecies.selection import ShapSelector
     from yspecies.tuning import Tune
-    from yspecies.results import FeatureSummary, FeatureResults
+    from yspecies.explanations import FeatureSummary, FeatureResults
     import optuna
     from optuna import Trial
 

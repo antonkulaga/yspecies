@@ -6,8 +6,8 @@ from yspecies.config import *
 from yspecies.partition import DataPartitioner
 from yspecies.partition import PartitionParameters
 from yspecies.preprocess import DataExtractor
-from yspecies.results import FeatureSummary
-from yspecies.selection import CrossValidator, ShapSelector
+from yspecies.explanations import ShapSelector, FeatureSummary
+from yspecies.selection import CrossValidator
 from yspecies.tuning import MultiObjectiveResults
 from yspecies.workflow import TupleWith, Repeat, Collect
 
@@ -23,29 +23,27 @@ class PipelineFactory:
     def partition_parameters(self):
         return PartitionParameters(self.n_folds, self.n_hold_out, 2,   42)
 
-    def load_study_by_trait(self, trait: str, study_name: str = None):
-        path = self.locations.interim.optimization / (trait+".sqlite")
-        study_name = f"{trait}_r2_huber_kendall" if study_name is None else study_name
-        return self.load_study(path, study_name)
-
-    def load_study(self, path: Path, name: str):
+    def load_study(self, path: Path, study_name: str):
         url = f'sqlite:///' +str(path.absolute())
         print('loading (if exists) study from '+url)
         storage = optuna.storages.RDBStorage(
             url=url
             #engine_kwargs={'check_same_thread': False}
         )
-        return optuna.multi_objective.study.create_study(directions=['maximize', 'minimize', 'maximize'], storage=storage, study_name=name, load_if_exists = True)
+        return optuna.multi_objective.study.create_study(directions=['maximize', 'minimize', 'maximize'], storage=storage, study_name=study_name, load_if_exists = True)
 
-    def make_partitioning_shap_pipeline(self, trait: str, study_name: str = None):
+    def make_partition_shap_pipe(self, trait: str = None, study_name: str = None, study_path: Path = None):
+        assert trait is not None or study_path is not None, "either trait or study path should be not None"
         study_name = f"{trait}_r2_huber_kendall" if study_name is None else study_name
-        study = self.load_study_by_trait(trait, study_name)
+        study_path = self.locations.interim.optimization / (trait+".sqlite") if study_path is None else study_path
+        study = self.load_study(study_path, study_name)
         if len(study.get_pareto_front_trials())>0 :
             metrics, params = MultiObjectiveResults.from_study(study).best_metrics_params_r2()
             params["verbose"] = -1
             if "early_stopping_round" not in params:
                 params["early_stopping_round"] = 10
         else:
+            print("FALLING BACK TO DEFAULT PARAMETERS")
             params = {"bagging_fraction": 0.9522534844058304,
                       "boosting_type": "dart",
                       "objective": "regression",
@@ -67,8 +65,8 @@ class PipelineFactory:
         ]
         )
 
-    def make_shap_pipeline(self, trait: str, study_name: str = None):
-        partition_shap_pipe = self.make_partitioning_shap_pipeline(trait, study_name)
+    def make_shap_pipeline(self, trait: str = None, study_name: str = None, study_path: Path = None):
+        partition_shap_pipe = self.make_partition_shap_pipe(trait, study_name, study_path)
         return Pipeline(
             [
                 ('extractor', DataExtractor()),
@@ -77,8 +75,8 @@ class PipelineFactory:
             ]
         )
 
-    def make_repeated_shap_pipeline(self, trait: str, study_name: str = None):
-        partition_shap_pipe = self.make_partitioning_shap_pipeline(trait, study_name)
+    def make_repeated_shap_pipeline(self, trait: str = None, study_name: str = None, study_path: Path = None):
+        partition_shap_pipe = self.make_partition_shap_pipe(trait, study_name, study_path = study_path)
         repeated_cv = Repeat(partition_shap_pipe, self.repeats, lambda x,i: (x[0], replace(x[1], seed=i)))
         return Pipeline(
             [
