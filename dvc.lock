@@ -179,20 +179,20 @@ stage_one:
   - path: data/interim/optimization/mtGC.sqlite
     md5: 08ebe078dd5041f18945a571d3415054
   - path: data/interim/optimization/temperature.sqlite
-    md5: 2fecb538190048e43e4718a7d19a6020
+    md5: 6cbdb4405cd2a969fefc39cd95565e45
   - path: parameters/stage_one_shap_selection.yaml
     md5: 43734a0f6f4865a78d36e5ea7e773176
   outs:
   - path: data/interim/stage_1/partitions
-    md5: 9c5756436c1afc3d902071ca13c7f945.dir
+    md5: ae477591a5bc3a2c2754300224cf9112.dir
   - path: data/interim/stage_1/results_concatenated.tsv
-    md5: 16f7b31f539afd48f0049ec2ba5ef8b5
+    md5: aaea00fd630d1de1763fae131861cd1a
   - path: data/interim/stage_2/input
-    md5: b0178fad5de0608d946acc86bf7112cb.dir
+    md5: abf6c9743ed47bacba31a1c43bb876af.dir
   - path: data/output/plots/stage_one_summary_lifespan.svg
-    md5: b51c7c2f85810926e595c5f75fd89d23
+    md5: dde34275322e8262e3ca451923cf42aa
   - path: data/output/plots/stage_two_untuned_summary_lifespan.svg
-    md5: d71cff6f67c6cbf4b4d6e2c2d08b6a50
+    md5: af05bb74f5704ca2f998a3b01bc1d3c9
   - path: data/output/stage_1/gestation_days_selected.tsv
     md5: da73b2b1b840a5eeb2d277e6fefa5bd8
   - path: data/output/stage_1/lifespan_selected.tsv
@@ -204,7 +204,7 @@ stage_one:
   - path: data/output/stage_1/mtGC_selected.tsv
     md5: c81d5a639f83b2d320b7cb706102e117
   - path: data/output/stage_1/temperature_selected.tsv
-    md5: 27a26dd71442fb2c15359b6a15c97e1d
+    md5: c531cebceb3f4254836d23da2dc4f088
 stage_two:
   cmd: papermill -f parameters/stage_two_shap_selection.yaml  --progress-bar --report-mode
     notebooks/stage_two_shap_selection.ipynb data/output/notebooks/stage_two_shap_selection.ipynb
@@ -212,13 +212,15 @@ stage_two:
   - path: data/interim/optimization/lifespan.sqlite
     md5: 0f73d0f933f828dcc5e287e6c9cacd5b
   - path: data/interim/stage_1/results_concatenated.tsv
-    md5: 16f7b31f539afd48f0049ec2ba5ef8b5
+    md5: aaea00fd630d1de1763fae131861cd1a
   - path: data/interim/stage_2/input
-    md5: b0178fad5de0608d946acc86bf7112cb.dir
+    md5: abf6c9743ed47bacba31a1c43bb876af.dir
   outs:
   - path: data/interim/stage_2/partitions
-    md5: e909903324553b7d89cf01d5367e578f.dir
+    md5: 73fb97e868a8652f629e1146f7693ca3.dir
+  - path: data/output/plots/stage_two_decision_lifespan.svg
+    md5: f9ea891dc429fd13a23dc5038c861c4a
   - path: data/output/plots/stage_two_summary_lifespan.svg
-    md5: acbef034cee6fb722ba8ee78d289e416
+    md5: a882dadbe07dcf4141ce7fe3bcda2411
   - path: data/output/stage_2/lifespan.tsv
-    md5: 13fa77d179492ed5db10b785dd3a3df6
+    md5: a1011770b6381cf9b280c7316742cf16

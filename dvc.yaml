@@ -55,6 +55,7 @@ stages:
       - data/interim/stage_2/partitions
       - data/output/stage_2/lifespan.tsv
       - data/output/plots/stage_two_summary_lifespan.svg
+      - data/output/plots/stage_two_decision_lifespan.svg
       #  - data/output/notebooks/stage_two_shap_selection.ipynb
   tune:
     cmd: python tune.py

@@ -40,7 +40,7 @@ class FeatureResults:
         folder.mkdir(exist_ok=True)
         for i, f in enumerate(self.folds):
             p = folder / f"{name}_{str(i)}_model.txt"
-            f.booster.save_model(str(p))
+            f.model.save_model(str(p))
         self.metrics_df.to_csv(folder / f"{name}_{str(i)}_metrics.tsv", sep="\t")
         self.hold_out_metrics.to_csv(folder / f"{name}_{str(i)}_metrics_hold_out.tsv", sep="\t")
         return folder
@@ -197,11 +197,16 @@ class FeatureResults:
                           )
         return self.make_figure(save)
 
-    def _plot_decision_(self, expected_value: float, shap_values: List[np.ndarray] or np.ndarray, gene_names: bool = True, save: Path = None):
+    def _plot_decision_(self, expected_value: float, shap_values: List[np.ndarray] or np.ndarray, title: str = None, gene_names: bool = True,
+                        auto_size_plot: bool = True,
+                        minimum: int = 0.0, maximum: int = 0.0, feature_display_range = None, save: Path = None):
         #shap.summary_plot(shap_values, self.partitions.X, show=False)
         feature_names = None if gene_names is False else self.feature_names
         min_max = (self.partitions.data.y.min(), self.partitions.data.y.max())
-        shap.decision_plot(expected_value, shap_values, xlim=min_max,  feature_names=feature_names.tolist(), show=False)
+        print(f"min_max dataset values: {min_max}")
+        xlim = (min(min_max[0], minimum), max(min_max[1], maximum))
+        shap.decision_plot(expected_value, shap_values, xlim=xlim,  feature_names=feature_names.tolist(), title=title,
+                           auto_size_plot=auto_size_plot, feature_display_range=feature_display_range, show=False)
         return self.make_figure(save)
 
     def plot_decision(self, save: Path = None):
@@ -210,7 +215,7 @@ class FeatureResults:
     def plot_fold_decision(self, num: int):
         assert num < len(self.folds), "index should be withing folds range!"
         f = self.folds[num]
-        self._plot_decision_(f.expected_value, f.shap_values)
+        return self._plot_decision_(f.expected_value, f.shap_values)
 
     def plot_dependency(self, feature: str, interaction_index:str = "auto", save: Path = None):
         shap.dependence_plot(feature, self.stable_shap_values, self.partitions.X, feature_names=self.feature_names, interaction_index=interaction_index)
@@ -293,6 +298,14 @@ class FeatureSummary:
     @property
     def first(self) -> FeatureResults:
         return self.results[0]
+
+    @property
+    def partitions(self):
+        return self.first.partitions
+
+    @cached_property
+    def expected_values_mean(self):
+        return np.mean([r.expected_values_mean for r in self.results])
 
     @cached_property
     def feature_names(self) -> np.ndarray:
@@ -409,32 +422,19 @@ class FeatureSummary:
                f"<tr><td>{self.selected._repr_html_()}</th><th>{self.metrics._repr_html_()}</th><th>{self.hold_out_metrics._repr_html_()}</th></tr>" \
                f"</table>"
 
-    def _plot_(self, shap_values: List[np.ndarray] or np.ndarray, gene_names: bool = True, save: Path = None,
-               max_display=None, title=None, layered_violin_max_num_bins = 20,
-               plot_type=None, color=None, axis_color="#333333", alpha=1, class_names=None, plot_size = None
-               ):  #TODO: make a mixin!
-        #shap.summary_plot(shap_values, self.partitions.X, show=False)
-        feature_names = None if gene_names is False else self.feature_names
-        shap.summary_plot(shap_values, self.first.partitions.X, feature_names=feature_names, show=False,
-                          max_display=max_display, title=title, layered_violin_max_num_bins=layered_violin_max_num_bins,
-                          class_names=class_names,
-                          # class_inds=class_inds,
-                          plot_type=plot_type,
-                          color=color, axis_color=axis_color, alpha=alpha, plot_size=plot_size
-                          )
-        fig = plt.gcf()
-        if save is not None:
-            from IPython.display import set_matplotlib_formats
-            set_matplotlib_formats('svg')
-            plt.savefig(save)
-        plt.close()
-        return fig
 
     def plot(self, gene_names: bool = True, save: Path = None,
              max_display=50, title=None, plot_size = 0.5, layered_violin_max_num_bins = 20,
              plot_type=None, color=None, axis_color="#333333", alpha=1, class_names=None):
-        return self._plot_(self.stable_shap_values, gene_names, save, max_display, title,
+        return self.first._plot_(self.stable_shap_values, gene_names, save, max_display, title,
                            layered_violin_max_num_bins, plot_type, color, axis_color, alpha, class_names = class_names, plot_size=plot_size)
+
+
+    def plot_decision(self, title: str = None, minimum: float = 0.0, maximum: float = 0.0, feature_display_range = None, auto_size_plot: bool = True, save: Path = None):
+        return self.first._plot_decision_(self.expected_values_mean, self.stable_shap_values, title, True, minimum= minimum, maximum= maximum,
+                                          feature_display_range = feature_display_range, auto_size_plot = auto_size_plot, save = save)
+
+
 
 
 @dataclass

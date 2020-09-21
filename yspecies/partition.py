@@ -6,6 +6,7 @@ from sklearn.base import TransformerMixin
 from yspecies.preprocess import EncodedFeatures, FeatureSelection
 from yspecies.utils import *
 import itertools
+from pathlib import Path
 
 from loguru import logger
 
