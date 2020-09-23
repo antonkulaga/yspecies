@@ -54,6 +54,7 @@ stages:
     outs:
       - data/interim/stage_2/partitions
       - data/output/stage_2/lifespan.tsv
+      - data/output/stage_2/lifespan_with_traits.tsv
       - data/output/plots/stage_two_summary_lifespan.svg
       - data/output/plots/stage_two_decision_lifespan.svg
       #  - data/output/notebooks/stage_two_shap_selection.ipynb
@@ -84,12 +85,7 @@ stages:
       - parameters/results_intersections.yaml
       - data/output/external/causality
       - data/output/external/linear
-      - data/output/external/shap
-      - data/output/external/causality/causal_relations_5_tissues_anton_species_5_bootstraps.csv
     outs:
       - data/output/notebooks/results_intersections.ipynb
-      - data/output/intersections/genage_human_intersections.tsv
-      - data/output/intersections/genage_model_intersections.tsv
-      - data/output/intersections/intersections_5_and_7.tsv
-      - data/output/intersections/intersections.tsv
-      - data/output/intersections/new_old_comparison.tsv
+      - data/output/stage_2/shap_results.tsv
+      - data/output/results/shap_with_linear_genage.tsv

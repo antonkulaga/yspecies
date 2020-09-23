@@ -1,0 +1,37 @@
+reference_gene	symbol	repeats	mean_shap	mean_kendall_tau	direction	other_life_history_traits	organ
+ENSG00000010219	DYRK4	10.0	8.375	0.26311600943070035	weak pro	mass_kg (weak pro | 4 | 21.19 | 0.2116), gestation_days (pro | 8 | 11.22 | 0.474)	Heart (pro r^2=0.3529)
+ENSG00000204498	NFKBIL1	10.0	7.35	-0.14091553655926475	weak anti	mass_kg (weak anti | 3 | 7.08 | -0.1927)	
+ENSG00000066923	STAG3	10.0	5.525	0.4376545978963829	pro	mass_kg (weak pro | 5 | 26.45 | 0.1543), gestation_days (pro | 10 | 6.5 | 0.424)	
+ENSG00000185880	TRIM69	10.0	5.2	0.13980502628438468	weak pro		
+ENSG00000105672	ETV2	10.0	3.55	0.7302768551674024	strong pro	mtGC (strong pro | 2 | 3.0 | 0.6327), gestation_days (strong pro | 9 | 4.08 | 0.6814)	
+ENSG00000167515	TRAPPC2L	9.0	6.0555555555555545	-0.16806697520492853	weak anti	mtGC (anti | 8 | 4.03 | -0.5141)	Brain (anti r^2=0.5246), Heart (anti r^2=0.3671)
+ENSG00000171121	KCNMB3	9.0	4.055555555555555	0.6670964838427479	strong pro	mtGC (strong pro | 10 | 10.03 | 0.6407), gestation_days (strong pro | 10 | 5.9 | 0.6228)	Brain (pro r^2=0.4583), Lung (pro r^2=0.4067), Kidney (pro r^2=0.3886)
+ENSG00000132436	FIGNL1	9.0	3.7222222222222223	0.5435169686081804	pro	gestation_days (pro | 6 | 3.42 | 0.4447)	Lung (pro r^2=0.4682), Brain (pro r^2=0.3752)
+ENSG00000157343	ARMC12	9.0	2.6388888888888893	0.6291896125347979	strong pro	gestation_days (strong pro | 6 | 1.92 | 0.6417)	Lung (pro r^2=0.3455)
+ENSG00000170835	CEL	8.0	3.21875	0.6936297046730411	strong pro	mtGC (strong pro | 5 | 2.4 | 0.6377)	Brain (pro r^2=0.4815)
+ENSG00000188747	NOXA1	8.0	2.65625	0.6924951857340649	strong pro	mtGC (strong pro | 5 | 6.25 | 0.6231), gestation_days (strong pro | 9 | 3.94 | 0.6514)	Brain (pro r^2=0.6271), Kidney (pro r^2=0.6017), Liver (pro r^2=0.5151), Lung (pro r^2=0.3161)
+ENSG00000106554	CHCHD3	7.0	2.9285714285714284	-0.38093043095291457	anti		Brain (anti r^2=0.4242), Heart (anti r^2=0.394)
+ENSG00000164362	TERT	7.0	2.8928571428571432	-0.4443564086687056	anti	mtGC (anti | 3 | 5.92 | -0.4467), gestation_days (strong anti | 5 | 2.75 | -0.6282)	Heart (anti r^2=0.4954), Liver (anti r^2=0.4836)
+ENSG00000129187	DCTD	7.0	1.6071428571428572	0.6241860823211135	strong pro	mtGC (strong pro | 5 | 2.75 | 0.6782)	Liver (pro r^2=0.6659), Heart (pro r^2=0.4353), Brain (pro r^2=0.3758)
+ENSG00000144451	SPAG16	6.0	3.625	0.4752061745071797	pro	mtGC (pro | 10 | 7.2 | 0.39), gestation_days (pro | 3 | 2.75 | 0.4601)	Heart (pro r^2=0.5564), Brain (pro r^2=0.5477)
+ENSG00000172531	PPP1CA	5.0	2.7	-0.7115400033677195	strong anti	gestation_days (strong anti | 9 | 5.25 | -0.755)	Brain (anti r^2=0.6099), Heart (anti r^2=0.4668)
+ENSG00000013288	MAN2B2	5.0	2.65	-0.30063260022950106	anti	gestation_days (anti | 6 | 2.96 | -0.3624)	
+ENSG00000160948	VPS28	5.0	2.25	-0.3289429657719614	anti		Lung (anti r^2=0.3473)
+ENSG00000023191	RNH1	4.0	4.0	-0.3186600296223711	anti	mtGC (anti | 4 | 2.19 | -0.5196)	
+ENSG00000165555	NOXRED1	4.0	3.9375	0.7986537780920405	strong pro		Liver (pro r^2=0.3163)
+ENSG00000108384	RAD51C	4.0	3.4375	0.3881911665771535	pro	mass_kg (weak pro | 2 | 8.75 | 0.1729)	Heart (pro r^2=0.4857), Liver (pro r^2=0.4239)
+ENSG00000142002	DPP9	4.0	2.5	-0.7027564636563315	strong anti		Lung (anti r^2=0.5074), Heart (anti r^2=0.3048)
+ENSG00000152705	CATSPER3	4.0	2.0625	0.684488932431433	strong pro		Liver (pro r^2=0.3118)
+ENSG00000132464	ENAM	4.0	2.0	0.4909395508209479	pro		
+ENSG00000066926	FECH	4.0	1.875	-0.4213639054485013	anti		Heart (anti r^2=0.396), Brain (anti r^2=0.3394), Liver (anti r^2=0.3253)
+ENSG00000136436	CALCOCO2	4.0	1.5	0.6841528630636933	strong pro		Lung (pro r^2=0.5586), Brain (pro r^2=0.5369), Liver (pro r^2=0.5263), Heart (pro r^2=0.3856)
+ENSG00000184983	NDUFA6	3.0	2.75	-0.6376254319146173	strong anti		Heart (anti r^2=0.403)
+ENSG00000165501	LRR1	3.0	2.25	0.6577177656640006	strong pro		Heart (pro r^2=0.4585), Lung (pro r^2=0.4286), Liver (pro r^2=0.3918)
+ENSG00000164879	CA3	3.0	1.0833333333333333	-0.4349587468145692	anti		Liver (anti r^2=0.4132)
+ENSG00000182612	TSPAN10	2.0	3.875	0.45250507344557894	pro		
+ENSG00000137343	ATAT1	2.0	2.875	-0.4033494193376896	anti		Lung (anti r^2=0.6775), Heart (anti r^2=0.3218)
+ENSG00000142541	RPL13A	2.0	2.625	-0.1850715949406148	weak anti		
+ENSG00000213719	CLIC1	2.0	2.5	-0.2524416555712991	weak anti		
+ENSG00000102265	TIMP1	2.0	2.0	0.5890472638581363	pro	mass_kg (weak pro | 3 | 3.42 | 0.0311)	Brain (pro r^2=0.5446), Liver (pro r^2=0.4771), Kidney (pro r^2=0.35)
+ENSG00000108786	HSD17B1	2.0	1.875	0.6506291141800644	strong pro		Liver (pro r^2=0.5025), Brain (pro r^2=0.4048)
+ENSG00000140398	NEIL1	2.0	1.75	0.4807959040534482	pro		

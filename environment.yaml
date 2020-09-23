@@ -6,11 +6,11 @@ channels:
   - defaults
 dependencies:
   - python=3.8
-  - jupyterlab>=2.2.4
-  - dvc>=1.7.2
+  - jupyterlab>=2.2.8
+  - dvc>=1.7.3
   - papermill>=2.1.2
   - anaconda-client>=1.7.2
-  - conda-build>=3.19.2
+  - conda-build>=3.20.2
   - mamba>=0.5.1
   - scikit-learn>=0.23.2
   - seaborn>=0.10.1

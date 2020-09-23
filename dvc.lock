@@ -72,27 +72,17 @@ results_intersections:
   deps:
   - path: data/output/external/causality
     md5: c00e3428ab5aac19fdc6c5157b09fb33.dir
-  - path: data/output/external/causality/causal_relations_5_tissues_anton_species_5_bootstraps.csv
-    md5: e3cf4199fa5234888c6fe0f388f87426
   - path: data/output/external/linear
     md5: 024046bb0390f0d3bd374580359ebff4.dir
-  - path: data/output/external/shap
-    md5: fb35c5a65c49be61d7dacdc1fba3764b.dir
   - path: parameters/results_intersections.yaml
-    md5: b1f4e5899bf2548de8a69cb96ce6f192
+    md5: ef24afafe29ef01d0a0d1544f1d46947
   outs:
-  - path: data/output/intersections/genage_human_intersections.tsv
-    md5: 7cd1e7ff10c8e35b41e884f355911437
-  - path: data/output/intersections/genage_model_intersections.tsv
-    md5: adaefd5646ae0c275ec680989663ef9c
-  - path: data/output/intersections/intersections.tsv
-    md5: d9748c0547ec3c01f122c2a967e6d37e
-  - path: data/output/intersections/intersections_5_and_7.tsv
-    md5: 5606ff2b9dd0269104b07509760fb824
-  - path: data/output/intersections/new_old_comparison.tsv
-    md5: 440391dfccd04e58897f3bb1c898b74b
   - path: data/output/notebooks/results_intersections.ipynb
-    md5: 4aa03ee3831120e7a7d76ed0351e9a46
+    md5: 769848705577a567cd7c61dec22fd398
+  - path: data/output/results/shap_with_linear_genage.tsv
+    md5: 9e9f4169d4480c94cbf775f94cc6b476
+  - path: data/output/stage_2/shap_results.tsv
+    md5: 7236c8612a4495da9288ff03cf244b48
 shap_selection:
   cmd: papermill -f parameters/shap_selection.yaml  --progress-bar --report-mode notebooks/shap_selection.ipynb
     data/output/notebooks/shap_selection.ipynb
@@ -224,3 +214,5 @@ stage_two:
     md5: a882dadbe07dcf4141ce7fe3bcda2411
   - path: data/output/stage_2/lifespan.tsv
     md5: a1011770b6381cf9b280c7316742cf16
+  - path: data/output/stage_2/lifespan_with_traits.tsv
+    md5: 6a72662224500b1c2f3ff8d01121fd2f

@@ -1,2 +1,4 @@
-threshold: 0.2
+threshold: 0.3
+trait: "lifespan"
+life_history: ["lifespan", "mass_kg", "mtGC", "metabolic_rate", "temperature", "gestation_days"]
 debug_local: false
