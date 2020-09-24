@@ -1,4 +1,6 @@
 threshold: 0.3
 trait: "lifespan"
 life_history: ["lifespan", "mass_kg", "mtGC", "metabolic_rate", "temperature", "gestation_days"]
+min_main_repeats: 10
+min_other_repeats: 3
 debug_local: false
