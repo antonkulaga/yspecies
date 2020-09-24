@@ -216,3 +216,24 @@ stage_two:
     md5: a1011770b6381cf9b280c7316742cf16
   - path: data/output/stage_2/lifespan_with_traits.tsv
     md5: 6a72662224500b1c2f3ff8d01121fd2f
+results:
+  cmd: papermill -f parameters/results_intersections.yaml  --progress-bar --report-mode
+    notebooks/results_intersections.ipynb data/output/notebooks/results_intersections.ipynb
+  deps:
+  - path: data/output/external/causality
+    md5: c00e3428ab5aac19fdc6c5157b09fb33.dir
+  - path: data/output/external/linear
+    md5: 024046bb0390f0d3bd374580359ebff4.dir
+  - path: notebooks/results_intersections.ipynb
+    md5: 8b254b1b09ae5d0b66e1f97a9ee70bb5
+  - path: parameters/results_intersections.yaml
+    md5: 45a394673b593a63177a9853f01d24c4
+  outs:
+  - path: data/output/notebooks/results_intersections.ipynb
+    md5: 90e722d2cb5bd50a635dcd8cebb52d95
+  - path: data/output/results/genage_intersection.tsv
+    md5: 6d3ebc5c50cc026941db3fc269a1746d
+  - path: data/output/results/shap_with_linear.tsv
+    md5: 6d3ebc5c50cc026941db3fc269a1746d
+  - path: data/output/stage_2/shap_results.tsv
+    md5: 9b052d5683d3e61e6845086801c5b709
