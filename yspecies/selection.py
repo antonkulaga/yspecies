@@ -26,7 +26,7 @@ class Fold:
 
     @cached_property
     def explainer(self) -> shap.TreeExplainer:
-        return shap.TreeExplainer(self.model, feature_perturbation=self.partitions.features.feature_perturbation, data=self.partitions.X)
+        return shap.TreeExplainer(self.model)#, feature_perturbation=self.partitions.features.feature_perturbationw), data=self.partitions.X)
 
     @cached_property
     def shap_values(self):
@@ -93,6 +93,10 @@ class Fold:
             return self.current_evals[metrics_num]
         else:
             return self.current_evals[eval_last_num]
+
+    @cached_property
+    def explanation(self):
+        return self.explainer(self.partitions.X)
 
     @cached_property
     def shap_values(self) -> List[np.ndarray]:

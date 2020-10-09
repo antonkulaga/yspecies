@@ -21,6 +21,7 @@ dependencies:
   - optuna>=2.1.0
   - click>=7.1.2
   - loguru>=0.5.0
+  - plotly>=4.11.0
   #- yspecies=0.2.3
   - pip
   - pip:

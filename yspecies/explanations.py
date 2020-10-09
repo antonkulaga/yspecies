@@ -2,6 +2,7 @@ from dataclasses import *
 from functools import cached_property
 from pathlib import Path
 
+import matplotlib
 import matplotlib.pyplot as plt
 import shap
 from more_itertools import flatten
@@ -28,6 +29,11 @@ class FeatureResults:
     parameters: Dict = field(default_factory=lambda: None)
     nan_as_zero: bool = True
 
+    @cached_property
+    def explanations(self):
+        return [f.explanation for f in self.folds]
+
+
     def write(self, folder: Path, name: str, with_folds: bool = True, folds_name: str = None):
         folds_name = name if folds_name is None else folds_name
         folder.mkdir(exist_ok=True)
@@ -42,7 +48,8 @@ class FeatureResults:
             p = folder / f"{name}_{str(i)}_model.txt"
             f.model.save_model(str(p))
         self.metrics_df.to_csv(folder / f"{name}_{str(i)}_metrics.tsv", sep="\t")
-        self.hold_out_metrics.to_csv(folder / f"{name}_{str(i)}_metrics_hold_out.tsv", sep="\t")
+        if self.partitions.has_hold_out:
+            self.hold_out_metrics.to_csv(folder / f"{name}_{str(i)}_metrics_hold_out.tsv", sep="\t")
         return folder
 
     @property
@@ -173,8 +180,12 @@ class FeatureResults:
     def expected_values(self):
         return [f.expected_value for f in self.folds]
 
-    def make_figure(self, save: Path):
-        fig = plt.gcf()
+    def make_figure(self, save: Path, figsize: Tuple[float, float] = None) -> matplotlib.figure.Figure:
+        fig: matplotlib.figure.Figure = plt.gcf()
+        if figsize is not None:
+            #print(f"changing figsize to {str(figsize)}")
+            plt.rcParams["figure.figsize"] = figsize
+            fig.set_size_inches(figsize[0], figsize[1], forward=True)
         if save is not None:
             from IPython.display import set_matplotlib_formats
             set_matplotlib_formats('svg')
@@ -196,6 +207,31 @@ class FeatureResults:
                           color=color, axis_color=axis_color, alpha=alpha
                           )
         return self.make_figure(save)
+
+    @cached_property
+    def explanation_mean(self) -> shap.Explanation:
+        exp = sum(self.explanations) / len(self.explanations)
+        exp.feature_names = self.feature_names
+        return exp
+
+    def _plot_heatmap_(self,
+                       shap_explanation: Union[shap.Explanation, List[shap.Explanation]],
+                       gene_names: bool = True,
+                       max_display=30,
+                       figsize=(14, 8),
+                       sort_by_clust: bool = True,
+                       save: Path = None):
+        value = shap_explanation if isinstance(shap_explanation, shap.Explanation) else sum(shap_explanation) / len(shap_explanation)
+        if gene_names:
+            value.feature_names = self.feature_names
+        if sort_by_clust:
+            shap.plots.heatmap(value, max_display=max_display, show=False)
+        else:
+            shap.plots.heatmap(value, max_display=max_display, show=False, instance_order=value.sum(1))
+        return self.make_figure(save, figsize=figsize)
+
+    def plot_heatmap(self, gene_names: bool = True, max_display=30, figsize=(14,8), sort_by_clust: bool = True, save: Path = None) -> matplotlib.figure.Figure:
+        return self._plot_heatmap_(self.explanation_mean, gene_names,  max_display, figsize, sort_by_clust, save)
 
     def _plot_decision_(self, expected_value: float, shap_values: List[np.ndarray] or np.ndarray, title: str = None, gene_names: bool = True,
                         auto_size_plot: bool = True,
@@ -228,6 +264,29 @@ class FeatureResults:
         f = self.folds[num]
         return self._plot_decision_(f.expected_value, f.interaction_values, gene_names, save)
 
+    def plot_interactions_heatmap(self):
+        #import plotly.express as px
+        import matplotlib.pylab as pl
+        import numpy as np
+
+        tmp = np.abs(self.interaction_values).mean(0)
+        tmp_abs = np.abs(self.interaction_values).sum(0)
+        for i in range(tmp.shape[0]):
+            tmp[i,i] = 0
+
+        inds = np.argsort(-tmp_abs.sum(0))[:10]
+        tmp2 = tmp[inds,:][:,inds]
+        pl.figure(figsize=(10,10))
+        pl.imshow(tmp2)
+        pl.colorbar()
+
+        print(tmp2)
+
+        pl.yticks(range(tmp2.shape[0]), np.array(self.feature_names)[inds], rotation=45, horizontalalignment="right")
+        pl.xticks(range(tmp2.shape[0]), np.array(self.feature_names)[inds], rotation=45, horizontalalignment="left")
+        pl.gca().xaxis.tick_top()
+        pl.show()
+
     def plot(self, gene_names: bool = True, save: Path = None,
              title=None,  max_display=100, layered_violin_max_num_bins = 20,
              plot_type=None, color=None, axis_color="#333333", alpha=1, show=True, class_names=None):
@@ -252,10 +311,11 @@ class FeatureResults:
                            layered_violin_max_num_bins, plot_type, color, axis_color, alpha)
 
     def _repr_html_(self):
+        hold_metrics = self.hold_out_metrics._repr_html_() if self.partitions.has_hold_out else ""
         return f"<table border='2'>" \
                f"<caption><h3>Feature selection results</h3><caption>" \
                f"<tr style='text-align:center'><th>selected</th><th>metrics</th><th>hold out metrics</th></tr>" \
-               f"<tr><td>{self.selected._repr_html_()}</th><th>{self.metrics_df._repr_html_()}</th><th>{self.hold_out_metrics._repr_html_()}</th></tr>" \
+               f"<tr><td>{self.selected._repr_html_()}</th><th>{self.metrics_df._repr_html_()}</th><th>{ hold_metrics}</th></tr>" \
                f"</table>"
 
     @cached_property
@@ -266,6 +326,14 @@ class FeatureResults:
 class FeatureSummary:
     results: List[FeatureResults]
     nan_as_zero: bool = True
+
+    @cached_property
+    def explanations(self) -> List[shap.Explanation]:
+        return [r.explanation_mean for r in self.results]
+
+    @cached_property
+    def explanation_mean(self) -> shap.Explanation:
+        return sum(self.explanations) / len(self.explanations)
 
     def write(self, folder: Path, name: str, with_folds: bool = True, folds_name: str = None, repeat_prefix: str = None) -> Path:
         folds_name = name if folds_name is None else folds_name
@@ -416,12 +484,16 @@ class FeatureSummary:
         return self.all_symbols.join(result[cols], how="right").sort_values(by=["repeats", "mean_shap", "mean_kendall_tau"], ascending=False)
 
     def _repr_html_(self):
+        hold_metrics = self.hold_out_metrics._repr_html_() if self.partitions.has_hold_out else ""
         return f"<table border='2'>" \
                f"<caption><h3>Feature selection results</h3><caption>" \
                f"<tr style='text-align:center'><th>selected</th><th>metrics</th><th>hold out metrics</th></tr>" \
-               f"<tr><td>{self.selected._repr_html_()}</th><th>{self.metrics._repr_html_()}</th><th>{self.hold_out_metrics._repr_html_()}</th></tr>" \
+               f"<tr><td>{self.selected._repr_html_()}</th><th>{self.metrics._repr_html_()}</th><th>{hold_metrics}</th></tr>" \
                f"</table>"
 
+
+    def plot_heatmap(self, gene_names: bool = True, max_display: int = 30, figsize: Tuple[float, float] = (14,9), sort_by_clust: bool = True, save: Path = None):
+        return self.first._plot_heatmap_(self.explanation_mean, gene_names, max_display, figsize, sort_by_clust, save)
 
     def plot(self, gene_names: bool = True, save: Path = None,
              max_display=50, title=None, plot_size = 0.5, layered_violin_max_num_bins = 20,

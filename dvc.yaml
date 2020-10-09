@@ -36,7 +36,7 @@ stages:
       - data/interim/stage_1/results_concatenated.tsv
       - data/interim/stage_1/partitions
       - data/interim/stage_2/input
-      - data/output/plots/stage_one_summary_lifespan.svg
+      - data/output/plots/stageтати_one_summary_lifespan.svg
       - data/output/plots/stage_two_untuned_summary_lifespan.svg
       - data/output/stage_1/gestation_days_selected.tsv
       - data/output/stage_1/mass_kg_selected.tsv

@@ -33,14 +33,19 @@ class ExpressionPartitions:
     n_hold_out: int = 0  # how many partitions we hold for checking validation
     seed: int = None  # random seed (useful for debugging)
 
+    @property
+    def has_hold_out(self) -> bool:
+        return self.n_hold_out > 0
+
     def write(self, folder: Path, name: str):
         folder.mkdir(exist_ok=True)
         for i, px in enumerate(self.partitions_x):
             px.to_csv(folder / f"{name}_X_{str(i)}.tsv", sep="\t", index_label="reference_gene")
         for i, py in enumerate(self.partitions_y):
             py.to_csv(folder / f"{name}_Y_{str(i)}.tsv", sep="\t", index_label="reference_gene")
-        self.hold_out_x.to_csv(folder / f"{name}_X_hold_out.tsv", sep="\t", index_label="reference_gene")
-        self.hold_out_y.to_csv(folder / f"{name}_Y_hold_out.tsv", sep="\t", index_label="reference_gene")
+        if self.n_hold_out > 0:
+            self.hold_out_x.to_csv(folder / f"{name}_X_hold_out.tsv", sep="\t", index_label="reference_gene")
+            self.hold_out_y.to_csv(folder / f"{name}_Y_hold_out.tsv", sep="\t", index_label="reference_gene")
         return folder
 
     @cached_property
