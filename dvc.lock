@@ -49,7 +49,7 @@ select_samples:
   - path: data/interim/selected/gestation_days
     md5: 03f0461ba9a1ca26f052203b948cd78b.dir
   - path: data/interim/selected/lifespan
-    md5: 65f40bf267437f9a07131d706e0fed3d.dir
+    md5: 4c5315e23281c98c3b5d748b84d32b3e.dir
   - path: data/interim/selected/mass_kg
     md5: f36dbab9692c98800c464052e8dc85af.dir
   - path: data/interim/selected/metabolic_rate
@@ -134,7 +134,7 @@ tune:
   - path: data/interim/selected/gestation_days
     md5: 03f0461ba9a1ca26f052203b948cd78b.dir
   - path: data/interim/selected/lifespan
-    md5: 65f40bf267437f9a07131d706e0fed3d.dir
+    md5: 4c5315e23281c98c3b5d748b84d32b3e.dir
   - path: data/interim/selected/mass_kg
     md5: f36dbab9692c98800c464052e8dc85af.dir
   - path: data/interim/selected/metabolic_rate
@@ -174,11 +174,13 @@ stage_one:
     md5: 43734a0f6f4865a78d36e5ea7e773176
   outs:
   - path: data/interim/stage_1/partitions
-    md5: ae477591a5bc3a2c2754300224cf9112.dir
+    md5: ceadfe3bf6b52fff3dcbbbb402ca543b.dir
   - path: data/interim/stage_1/results_concatenated.tsv
     md5: aaea00fd630d1de1763fae131861cd1a
   - path: data/interim/stage_2/input
-    md5: abf6c9743ed47bacba31a1c43bb876af.dir
+    md5: 3455b18f09d736b373130f116086a813.dir
+  - path: data/output/plots/stage_one
+    md5: 646df73f42596ae265050b7aa8b9c785.dir
   - path: data/output/plots/stage_one_summary_lifespan.svg
     md5: dde34275322e8262e3ca451923cf42aa
   - path: data/output/plots/stage_two_untuned_summary_lifespan.svg
@@ -204,7 +206,7 @@ stage_two:
   - path: data/interim/stage_1/results_concatenated.tsv
     md5: aaea00fd630d1de1763fae131861cd1a
   - path: data/interim/stage_2/input
-    md5: abf6c9743ed47bacba31a1c43bb876af.dir
+    md5: 3455b18f09d736b373130f116086a813.dir
   outs:
   - path: data/interim/stage_2/partitions
     md5: 73fb97e868a8652f629e1146f7693ca3.dir
