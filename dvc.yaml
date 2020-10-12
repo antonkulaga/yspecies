@@ -58,6 +58,10 @@ stages:
       - data/output/stage_2/lifespan_with_traits.tsv
       - data/output/plots/stage_two_summary_lifespan.svg
       - data/output/plots/stage_two_decision_lifespan.svg
+      - data/output/plots/heatmap_lifespan_stage_two.svg
+      - data/output/plots/heatmap_lifespan_stage_two_100.svg
+      - data/output/plots/heatmap_lifespan_stage_two_unclustered.svg
+      - data/output/plots/heatmap_lifespan_stage_two_unclustered_100.svg
       #  - data/output/notebooks/stage_two_shap_selection.ipynb
   tune:
     cmd: python tune.py
@@ -86,6 +90,8 @@ stages:
       - parameters/results_intersections.yaml
       - data/output/external/causality
       - data/output/external/linear
+      - data/output/external/causality/causal_selection.tsv
+      - data/output/external/causality/signature_scores_ensembl_codes.csv
       - notebooks/results_intersections.ipynb
     outs:
       - data/output/notebooks/results_intersections.ipynb

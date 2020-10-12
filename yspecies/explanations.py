@@ -195,7 +195,7 @@ class FeatureResults:
 
     def _plot_(self, shap_values: List[np.ndarray] or np.ndarray, gene_names: bool = True, save: Path = None,
                max_display=None, title=None, layered_violin_max_num_bins = 20,
-               plot_type=None, color=None, axis_color="#333333", alpha=1, class_names=None
+               plot_type=None, color=None, axis_color="#333333", alpha=1, class_names=None, plot_size = "auto"
                ):
         #shap.summary_plot(shap_values, self.partitions.X, show=False)
         feature_names = None if gene_names is False else self.feature_names
@@ -204,7 +204,7 @@ class FeatureResults:
                           class_names=class_names,
                           # class_inds=class_inds,
                           plot_type=plot_type,
-                          color=color, axis_color=axis_color, alpha=alpha
+                          color=color, axis_color=axis_color, alpha=alpha, plot_size = plot_size
                           )
         return self.make_figure(save)
 
