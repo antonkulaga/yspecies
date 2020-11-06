@@ -27,6 +27,10 @@ class FeatureSelection:
     feature_perturbation: str = "tree_path_dependent"
     not_validated_species: List[str] = field(default_factory=lambda: [])
 
+    @cached_property
+    def species_non_categorical(self) -> List:
+        return [s for s in self.species if s not in self.categorical]
+
     @property
     def has_categorical(self):
         return self.categorical is not None and len(self.categorical) > 0
@@ -64,7 +68,7 @@ class EncodedFeatures:
         else:
             self.encoders: Dict[str, LabelEncoder] = {f: LabelEncoder() for f in features.categorical}
             for col, encoder in self.encoders.items():
-                col_encoded = col+"encoded"
+                col_encoded = col+"_encoded"
                 self.samples[col_encoded] = encoder.fit_transform(samples[col].values)
 
     @cached_property

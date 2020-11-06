@@ -7,6 +7,8 @@ from typing import *
 import numpy as np
 import pandas as pd
 
+from typing import *
+from enum import Enum, auto
 
 @dataclass
 class Table:
@@ -46,3 +48,19 @@ def more_or_value(n: np.ndarray, min: float = 0.0, value: float = 0.0):
     k = n.copy()
     k[k <= min] = value
     return k
+
+def matplot_to_plotly_colors(cmap, pl_entries=11, rdigits=2):
+    # cmap - colormap
+    # pl_entries - int = number of Plotly colorscale entries
+    # rdigits - int -=number of digits for rounding scale values
+    scale = np.linspace(0, 1, pl_entries)
+    colors = (cmap(scale)[:, :3]*255).astype(np.uint8)
+    pl_colorscale = [[round(s, rdigits), f'rgb{tuple(color)}'] for s, color in zip(scale, colors)]
+    return pl_colorscale
+
+import shap.plots.colors
+red_blue  = matplot_to_plotly_colors(shap.plots.colors._colors.red_blue)
+red_blue_transparent  = matplot_to_plotly_colors(shap.plots.colors._colors.red_blue_transparent)
+red_blue_no_bounds = matplot_to_plotly_colors(shap.plots.colors._colors.red_blue_no_bounds)
+red_blue_circle  = matplot_to_plotly_colors(shap.plots.colors._colors.red_blue_circle)
+red_white_blue = matplot_to_plotly_colors(shap.plots.colors._colors.red_white_blue)

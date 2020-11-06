@@ -14,7 +14,6 @@ from yspecies.partition import ExpressionPartitions
 from yspecies.utils import *
 from loguru import logger
 from yspecies.selection import Fold
-
 from scipy.stats import kendalltau
 
 @dataclass(frozen=True)
@@ -146,6 +145,11 @@ class FeatureResults:
         return self.selected.join(self.stable_shap_dataframe_T, how="left")
 
     @cached_property
+    def mean_shap_values(self) -> np.ndarray:
+        return np.mean(np.nan_to_num(self.stable_shap_values, 0.0), axis=0) if self.nan_as_zero else np.nanmean(self.stable_shap_values, axis=0)
+
+
+    @cached_property
     def stable_shap_values(self) -> np.ndarray:
         return np.mean(np.nan_to_num(self.shap_values, 0.0), axis=0) if self.nan_as_zero else np.nanmean(self.shap_values, axis=0)
 
@@ -167,10 +171,9 @@ class FeatureResults:
         return [f.interaction_values for f in self.folds]
 
     @cached_property
-    def feature_names(self):
+    def feature_names(self) -> np.ndarray:
         gene_names = self.partitions.data.genes_meta["symbol"].values
-        col = self.partitions.data.X.columns[-1]
-        return np.append(gene_names, col) if "encoded" in col else gene_names
+        return np.concatenate([self.partitions.features.species_non_categorical, gene_names, [c+"_encoded" for c in self.partitions.features.categorical]])
 
     @cached_property
     def expected_values_mean(self):
@@ -248,51 +251,92 @@ class FeatureResults:
     def plot_decision(self, save: Path = None):
         return self._plot_decision_(self.expected_values_mean, self.stable_shap_values, True, save)
 
+    def data_for_interaction_heatmap(self, stable_interaction_values, max: int = 15, round: int = 4) -> Tuple[np.ndarray, np.ndarray]:
+        abs_int = np.abs(stable_interaction_values).mean(axis=0).round(round)
+        abs_int[np.diag_indices_from(abs_int)] = 0
+        inds = np.argsort(-abs_int.sum(axis=0))[:max+1]
+        feature_names: np.ndarray = self.feature_names[inds]
+        return abs_int[inds, :][:, inds], feature_names
+
+
+    def __plot_interactions__(self, stable_interaction_values, max: int = 15,
+                              round: int = 4, colorscale = red_blue,
+                              width: int = None, height: int = None,
+                              title="Interactions plot",
+                              axis_title: str = "Features",
+                              title_font_size = 18, save: Path = None
+                              ):
+        import plotly.graph_objects as go
+        abs_int, feature_names = self.data_for_interaction_heatmap(stable_interaction_values, max, round)
+        data=go.Heatmap(
+            z=abs_int,
+            x=feature_names,
+            y=feature_names,
+            xtype="scaled",
+            ytype="scaled",
+            colorscale=colorscale)
+        layout = go.Layout(
+            title=title,
+            hovermode='closest',
+            autosize=True,
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            xaxis=dict(zeroline=False,side="top", title_text=axis_title, showgrid=False),
+            yaxis=dict(zeroline=False, autorange='reversed', scaleanchor="x", scaleratio=1, title_text=axis_title, showgrid=False),
+            font = {"size": title_font_size}
+        )
+        fig = go.Figure(data=data, layout=layout)
+        if height is not None:
+            width = height if width is None else width
+            fig.update_layout(
+                autosize=False,
+                width=width,
+                height=height
+            )
+        if save is not None:
+            fig.write_image(str(save))
+        return fig
+
+    def plot_interactions(self, max: int = 15,
+                          round: int = 4, colorscale = red_blue,
+                          width: int = None, height: int = None,
+                          title="Interactions plot",
+                          axis_title: str = "Features",
+                          title_font_size = 18, save: Path = None
+                          ):
+        return self.__plot_interactions__(self.stable_interaction_values, max, round, colorscale, width, height, title, axis_title, title_font_size, save)
+
     def plot_fold_decision(self, num: int):
         assert num < len(self.folds), "index should be withing folds range!"
         f = self.folds[num]
         return self._plot_decision_(f.expected_value, f.shap_values)
 
+    def plot_waterfall(self, index: Union[int, str], save: Path = None, max_display = 10, show: bool = False):
+        return self.__plot_waterfall__(index, self.stable_shap_values, save, max_display, show)
+
+    def __plot_waterfall__(self, index: Union[int, str], shap_values, save: Path = None, max_display = 10, show: bool = False):
+        if isinstance(index, int):
+            ind = index
+            value = self.partitions.Y.iloc[index].values[0]
+        else:
+            ind = self.partitions.Y.index.get_loc(index)
+            value = self.partitions.Y.loc[index].values[0]
+        shap.plots._waterfall.waterfall_legacy(value, shap_values[ind], feature_names = self.feature_names, max_display=max_display, show=show)
+        return self.make_figure(save)
+
     def plot_dependency(self, feature: str, interaction_index:str = "auto", save: Path = None):
         shap.dependence_plot(feature, self.stable_shap_values, self.partitions.X, feature_names=self.feature_names, interaction_index=interaction_index)
         return self.make_figure(save)
 
-    def plot_interactions(self, save: Path = None):
-        return self._plot_decision_(self.expected_values_mean, self.stable_interaction_values, True, save)
-
     def plot_fold_interactions(self, num: int, gene_names: bool = True, save: Path = None):
         f = self.folds[num]
         return self._plot_decision_(f.expected_value, f.interaction_values, gene_names, save)
-
-    def plot_interactions_heatmap(self):
-        #import plotly.express as px
-        import matplotlib.pylab as pl
-        import numpy as np
-
-        tmp = np.abs(self.interaction_values).mean(0)
-        tmp_abs = np.abs(self.interaction_values).sum(0)
-        for i in range(tmp.shape[0]):
-            tmp[i,i] = 0
-
-        inds = np.argsort(-tmp_abs.sum(0))[:10]
-        tmp2 = tmp[inds,:][:,inds]
-        pl.figure(figsize=(10,10))
-        pl.imshow(tmp2)
-        pl.colorbar()
-
-        print(tmp2)
-
-        pl.yticks(range(tmp2.shape[0]), np.array(self.feature_names)[inds], rotation=45, horizontalalignment="right")
-        pl.xticks(range(tmp2.shape[0]), np.array(self.feature_names)[inds], rotation=45, horizontalalignment="left")
-        pl.gca().xaxis.tick_top()
-        pl.show()
 
     def plot(self, gene_names: bool = True, save: Path = None,
              title=None,  max_display=100, layered_violin_max_num_bins = 20,
              plot_type=None, color=None, axis_color="#333333", alpha=1, show=True, class_names=None):
         return self._plot_(self.stable_shap_values, gene_names, save, title, max_display,
                            layered_violin_max_num_bins, plot_type, color, axis_color, alpha, class_names)
-
 
     def plot_folds(self, names: bool = True, save: Path = None, title=None,
                    max_display=100, layered_violin_max_num_bins = 20,
@@ -431,6 +475,15 @@ class FeatureSummary:
     def stable_shap_values(self):
         return np.mean(np.nan_to_num(self.shap_values, 0.0), axis=0) if self.nan_as_zero else np.nanmean(self.shap_values, axis=0)
 
+    @cached_property
+    def interaction_values(self) -> List[np.ndarray]:
+        return [f.stable_interaction_values for f in self.results]
+
+    @cached_property
+    def stable_interaction_values(self):
+        return np.mean(np.nan_to_num(self.interaction_values, 0.0), axis=0) if self.nan_as_zero else np.nanmean(self.interaction_values, axis=0)
+
+
     @property
     def MSE(self) -> float:
         return self.metrics_average.MSE
@@ -472,16 +525,22 @@ class FeatureSummary:
         for i, r in enumerate(self.results):
             c_shap = f"{pref}_{i}"
             c_tau = f"kendall_tau_{i}"
-            res = r.selected.rename(columns={f"{pref}_absolute_sum_to_{self.to_predict}": c_shap, f"{self.features.importance_type}_score_to_{self.to_predict}": c_shap, f"kendall_tau_to_{self.to_predict}": c_tau})
+            res = r.selected.rename(columns=
+                                    {f"{pref}_absolute_sum_to_{self.to_predict}": c_shap,
+                                     f"{self.features.importance_type}_score_to_{self.to_predict}": c_shap,
+                                     f"kendall_tau_to_{self.to_predict}": c_tau,
+                                     f"shap_mean": f"shap_mean_{i}"}
+                                    )
             res[f"in_fold_{i}"] = 1
             result = result.join(res[[c_shap, c_tau]], how="outer")
         pre_cols = result.columns.to_list()
         result["repeats"] = result.count(axis=1) / 2.0
-        result["mean_shap"] = result[[col for col in result.columns if pref in col]].mean(skipna = True, axis=1)
+        result["mean_abs_shap"] = result[[col for col in result.columns if pref in col]].fillna(0.0).mean(axis=1)
+        result["shap_mean"] = result[[col for col in result.columns if "shap_mean" in col]].fillna(0.0).mean(axis=1)
         result["mean_kendall_tau"] = result[[col for col in result.columns if "kendall_tau" in col]].mean(skipna = True, axis=1)
-        new_cols = ["repeats", "mean_shap", "mean_kendall_tau"]
+        new_cols = ["repeats", "mean_abs_shap", "mean_kendall_tau"]
         cols = new_cols + pre_cols
-        return self.all_symbols.join(result[cols], how="right").sort_values(by=["repeats", "mean_shap", "mean_kendall_tau"], ascending=False)
+        return self.all_symbols.join(result[cols], how="right").sort_values(by=["repeats", "mean_abs_shap", "mean_kendall_tau"], ascending=False)
 
     def _repr_html_(self):
         hold_metrics = self.hold_out_metrics._repr_html_() if self.partitions.has_hold_out else ""
@@ -495,12 +554,32 @@ class FeatureSummary:
     def plot_heatmap(self, gene_names: bool = True, max_display: int = 30, figsize: Tuple[float, float] = (14,9), sort_by_clust: bool = True, save: Path = None):
         return self.first._plot_heatmap_(self.explanation_mean, gene_names, max_display, figsize, sort_by_clust, save)
 
+    def plot_waterfall(self, index: Union[int, str], save: Path = None, max_display = 10, show: bool = False):
+        return self.first.__plot_waterfall__(index, self.stable_shap_values, save, max_display, show)
+
+    def plot_dependency(self, feature: str, interaction_index:str = "auto", save: Path = None):
+        shap.dependence_plot(feature, self.stable_shap_values, self.partitions.X, feature_names=self.feature_names, interaction_index=interaction_index)
+        return self.first.make_figure(save)
+
+    def plot_interactions(self, max: int = 15,
+                          round: int = 4, colorscale = red_blue,
+                          width: int = None, height: int = None,
+                          title="Interactions plot",
+                          axis_title: str = "Features",
+                          title_font_size = 18, save: Path = None
+                          ):
+        return self.first.__plot_interactions__(self.stable_interaction_values, max, round, colorscale, width, height, title, axis_title, title_font_size, save)
+
     def plot(self, gene_names: bool = True, save: Path = None,
              max_display=50, title=None, plot_size = 0.5, layered_violin_max_num_bins = 20,
              plot_type=None, color=None, axis_color="#333333", alpha=1, class_names=None):
         return self.first._plot_(self.stable_shap_values, gene_names, save, max_display, title,
                            layered_violin_max_num_bins, plot_type, color, axis_color, alpha, class_names = class_names, plot_size=plot_size)
 
+
+    def plot_interaction_decision_plot(self, title: str = None, minimum: float = 0.0, maximum: float = 0.0, feature_display_range = None, auto_size_plot: bool = True, save: Path = None):
+        return self.first._plot_decision_(self.expected_values_mean, self.stable_interaction_values, title, True, minimum= minimum, maximum= maximum,
+                                      feature_display_range = feature_display_range, auto_size_plot = auto_size_plot, save = save)
 
     def plot_decision(self, title: str = None, minimum: float = 0.0, maximum: float = 0.0, feature_display_range = None, auto_size_plot: bool = True, save: Path = None):
         return self.first._plot_decision_(self.expected_values_mean, self.stable_shap_values, title, True, minimum= minimum, maximum= maximum,
@@ -538,7 +617,7 @@ class ShapSelector(TransformerMixin):
             non_zero_cols = 0
             cols = []
             for f in folds:
-                weight = f.feature_weights[i] if select_by_shap else folds[0].shap_absolute_sum[column]
+                weight = f.shap_absolute_mean[column] if select_by_shap else f.feature_weights[i] #folds[0].shap_absolute_sum[column]
                 cols.append(weight)
                 if weight != 0:
                     non_zero_cols += 1
@@ -548,6 +627,7 @@ class ShapSelector(TransformerMixin):
                     output_features_by_weight.append({
                         'ensembl_id': partitions.X.columns[i],
                         score_name: np.mean(cols),
+                        "shap_mean": np.mean(shap_values_transposed[i]),
                         # 'name': partitions.X.columns[i], #ensemble_data.gene_name_of_gene_id(X.columns[i]),
                         kendal_tau_name: kendalltau(shap_values_transposed[i], X_transposed[i], nan_policy='omit')[0]
                     })

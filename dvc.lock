@@ -174,29 +174,29 @@ stage_one:
     md5: 43734a0f6f4865a78d36e5ea7e773176
   outs:
   - path: data/interim/stage_1/partitions
-    md5: 2952628d6dc43a3f11328b9001751a5f.dir
+    md5: c70cae310172de021ff95c4bebb96e21.dir
   - path: data/interim/stage_1/results_concatenated.tsv
-    md5: 070bc730658411d2e89fb52c2b562a94
+    md5: 206bf0eb607029e3bd6ff9fdf22bf636
   - path: data/interim/stage_2/input
-    md5: a1985670115572d96accfce3b7c97ad4.dir
-  - path: data/output/plots/stage_one
-    md5: 24223f1acf4a7fb2faba9f9f34c6fd9e.dir
-  - path: data/output/plots/stage_one_summary_lifespan.svg
-    md5: 32c6edc0082b23b9c3a1a56028ac835f
-  - path: data/output/plots/stage_two_untuned_summary_lifespan.svg
-    md5: 6a7348d7079e9ff4ed9901e92a8f7e1a
+    md5: 0e23e5707e9e4cf0295e4b14e1d3cedd.dir
+  - path: data/output/plots/stage_1/
+    md5: bb4dbd82d36324094523b556c572345c.dir
+  - path: data/output/plots/stage_1/stage_one_summary_lifespan.svg
+    md5: d08a2c251fe9ccf2a04048194fdc9a94
+  - path: data/output/plots/stage_2/stage_two_untuned_summary_lifespan.svg
+    md5: 33f22344e8fe09e39db18aa073aac006
   - path: data/output/stage_1/gestation_days_selected.tsv
-    md5: 5459fef658183bd98cd6922d17f98538
+    md5: 06a8f9d1da9583bd0d8926d094f7361a
   - path: data/output/stage_1/lifespan_selected.tsv
-    md5: 67e8b72c868d7f5f6d937b500bee74e6
+    md5: 31fcf98988b82e5027db92db47df6240
   - path: data/output/stage_1/mass_kg_selected.tsv
-    md5: 03b0e98d5299c243b6c6213c788478fb
+    md5: 35d066eb10b7c7f7d2cba20c2c72a25f
   - path: data/output/stage_1/metabolic_rate_selected.tsv
-    md5: fb217d4b5eec468f9071bf09632999e8
+    md5: fb8c331c1713bcde1ef3850add59ae8d
   - path: data/output/stage_1/mtGC_selected.tsv
-    md5: 9ebd404170d79854493f06eb1af1a296
+    md5: 589a0f09a8948829ba4dc465f81cd5ac
   - path: data/output/stage_1/temperature_selected.tsv
-    md5: e70eec64e10b47a25f3280da2e040d9b
+    md5: 645b89723a9fdaca13f21799fe842db7
 stage_two:
   cmd: papermill -f parameters/stage_two_shap_selection.yaml  --progress-bar --report-mode
     notebooks/stage_two_shap_selection.ipynb data/output/notebooks/stage_two_shap_selection.ipynb
@@ -204,26 +204,34 @@ stage_two:
   - path: data/interim/optimization/lifespan.sqlite
     md5: 0f73d0f933f828dcc5e287e6c9cacd5b
   - path: data/interim/stage_1/results_concatenated.tsv
-    md5: 070bc730658411d2e89fb52c2b562a94
+    md5: 206bf0eb607029e3bd6ff9fdf22bf636
   - path: data/interim/stage_2/input
-    md5: a1985670115572d96accfce3b7c97ad4.dir
+    md5: 0e23e5707e9e4cf0295e4b14e1d3cedd.dir
   outs:
   - path: data/interim/stage_2/partitions
-    md5: e29ff12f078e5bbec71713ce7db8f754.dir
-  - path: data/output/plots/heatmap_lifespan_stage_two.svg
-    md5: 9fc1680ac45d1bec6345236c1115e747
-  - path: data/output/plots/heatmap_lifespan_stage_two_100.svg
-    md5: d39986354a2bf30d42e15ab2e72b7787
-  - path: data/output/plots/heatmap_lifespan_stage_two_unclustered.svg
+    md5: 2efeb36c1cb5982e0d6b4aae68144655.dir
+  - path: data/output/plots/interactions/
+    md5: 454a5527065f837c84fedd9fd37765ab.dir
+  - path: data/output/plots/stage_2/
+    md5: 5a918509a7c032e4e1fa18580421eab5.dir
+  - path: data/output/plots/stage_2/heatmap_lifespan_stage_two.svg
+    md5: 3ad4f8261ee542209988e4378d79b20b
+  - path: data/output/plots/stage_2/heatmap_lifespan_stage_two_100.svg
+    md5: 69d418713996991a4039a16b1b0206a1
+  - path: data/output/plots/stage_2/heatmap_lifespan_stage_two_unclustered.svg
     md5: fef20cb2be769878358e920d131f1be4
-  - path: data/output/plots/heatmap_lifespan_stage_two_unclustered_100.svg
-    md5: 9525be7f9b3cfcba3ed8a37504622224
-  - path: data/output/plots/stage_two_decision_lifespan.svg
-    md5: 3e87acb2f9f25a6994cb333794b48cb1
-  - path: data/output/plots/stage_two_summary_lifespan.svg
-    md5: 7044c286e4d06e27f59e200988739ccb
+  - path: data/output/plots/stage_2/heatmap_lifespan_stage_two_unclustered_100.svg
+    md5: c64be75fd3dfb1305ea6b10dc7987a64
+  - path: data/output/plots/stage_2/heatmap_lifespan_untuned_stage_two.svg
+    md5: 072b70fd7464413f137649063ea79de0
+  - path: data/output/plots/stage_2/heatmap_lifespan_untuned_unclustered_stage_two.svg
+    md5: 6b9f9217e8f5c2d00782ba1490e511ba
+  - path: data/output/plots/stage_2/stage_two_decision_lifespan.svg
+    md5: 5ee136b6d15f39111285dd4e8f03a7af
+  - path: data/output/plots/stage_2/stage_two_summary_lifespan.svg
+    md5: 479834f6465ec3b71c0c2811ba04c7e2
   - path: data/output/stage_2/lifespan.tsv
-    md5: adb5ed92c17597ef5563adcc669c3621
+    md5: 0c0d3c3f453ae8d0e9562ca26af4ea55
   - path: data/output/stage_2/lifespan_with_traits.tsv
     md5: 6a72662224500b1c2f3ff8d01121fd2f
 results:
@@ -231,7 +239,7 @@ results:
     notebooks/results_intersections.ipynb data/output/notebooks/results_intersections.ipynb
   deps:
   - path: data/output/external/causality
-    md5: eec923eefa9c1db64affd70944a4d6ed.dir
+    md5: 49db2b61f6e05fef5d975c56f139322f.dir
   - path: data/output/external/causality/causal_selection.tsv
     md5: 055328523cd2cb3df99fe180e423d8f8
   - path: data/output/external/causality/signature_scores_ensembl_codes.csv
@@ -239,15 +247,15 @@ results:
   - path: data/output/external/linear
     md5: 024046bb0390f0d3bd374580359ebff4.dir
   - path: notebooks/results_intersections.ipynb
-    md5: 1376c314c7d337b073223b90f6ea4767
+    md5: 79d974727423f1e883d44931a9cbec32
   - path: parameters/results_intersections.yaml
     md5: 45a394673b593a63177a9853f01d24c4
   outs:
   - path: data/output/notebooks/results_intersections.ipynb
     md5: 90e722d2cb5bd50a635dcd8cebb52d95
   - path: data/output/results/genage_intersection.tsv
-    md5: 2452820596815240e8869edd925cdeea
+    md5: a842761f0fdc758c5a63accdff2ca04e
   - path: data/output/results/shap_with_linear.tsv
-    md5: 575d402e3458bf5a766d9dd2979a0627
+    md5: 28fc3e2bbebe7b7f9fc0bc7cd5e5dc97
   - path: data/output/stage_2/shap_results.tsv
-    md5: ab665cd224d68b6fa6d02f347c59931d
+    md5: 4c119297d36a72fc89224edbac7aaa76

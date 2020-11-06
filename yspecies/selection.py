@@ -107,6 +107,10 @@ class Fold:
         return self.explainer.shap_interaction_values(self.partitions.X)
 
     @cached_property
+    def shap_absolute_mean(self):
+        return self.shap_dataframe.abs().mean(axis=0)
+
+    @cached_property
     def shap_absolute_sum(self):
         return self.shap_dataframe.abs().sum(axis=0)
 

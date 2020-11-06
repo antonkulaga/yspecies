@@ -7,7 +7,7 @@ channels:
 dependencies:
   - python=3.8
   - jupyterlab>=2.2.8
-  - dvc>=1.7.3
+  - dvc>=1.9.1
   - papermill>=2.1.2
   - anaconda-client>=1.7.2
   - conda-build>=3.20.2
@@ -15,10 +15,10 @@ dependencies:
   - scikit-learn>=0.23.2
   - seaborn>=0.10.1
   - more-itertools>=8.4.0
-  - shap>=0.36.0
+  - shap>=0.37.0
   - lightgbm>=3.0.0
   - statsmodels>=0.11.1
-  - optuna>=2.2.0
+  - optuna>=2.3.0
   - click>=7.1.2
   - loguru>=0.5.0
   - plotly>=4.11.0
