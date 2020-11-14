@@ -159,8 +159,8 @@ class CrossValidator(TransformerMixin):
         for i in range(0, partitions.n_folds - partitions.n_hold_out):
             X_train, X_test, y_train, y_test = partitions.split_fold(i)
             logger.info(f"SEED: {partitions.seed} | FOLD: {i} | VALIDATION_SPECIES: {str(partitions.validation_species[i])}")
-            model, eval_results = self.regression_model(X_train, X_test, y_train, y_test, parameters,
-                                                        partitions.categorical_index, seed=partitions.seed)
+            cat_index = partitions.categorical_index if len(partitions.categorical_index) > 0 else None
+            model, eval_results = self.regression_model(X_train, X_test, y_train, y_test, parameters, cat_index, seed=partitions.seed)
             self.models.append(model)
             self.evals.append(eval_results)
         return self
@@ -177,7 +177,7 @@ class CrossValidator(TransformerMixin):
         :param parameters:
         :return:
         '''
-        cat = categorical if len(categorical) > 0 else "auto"
+        cat = categorical if (categorical is not None) and len(categorical) > 0 else "auto"
         lgb_train = lgb.Dataset(X_train, y_train, categorical_feature=cat)
         lgb_eval = lgb.Dataset(X_test, y_test, reference=lgb_train)
         evals_result = {}

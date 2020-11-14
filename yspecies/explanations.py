@@ -9,6 +9,7 @@ from more_itertools import flatten
 from sklearn.base import TransformerMixin
 
 import yspecies
+from yspecies.dataset import ExpressionDataset
 from yspecies.models import Metrics
 from yspecies.partition import ExpressionPartitions
 from yspecies.utils import *
@@ -198,11 +199,12 @@ class FeatureResults:
 
     def _plot_(self, shap_values: List[np.ndarray] or np.ndarray, gene_names: bool = True, save: Path = None,
                max_display=None, title=None, layered_violin_max_num_bins = 20,
-               plot_type=None, color=None, axis_color="#333333", alpha=1, class_names=None, plot_size = "auto"
+               plot_type=None, color=None, axis_color="#333333", alpha=1, class_names=None, plot_size = "auto", custom_data_frame: pd.DataFrame = None
                ):
+        df = self.partitions.X if custom_data_frame is None else custom_data_frame
         #shap.summary_plot(shap_values, self.partitions.X, show=False)
         feature_names = None if gene_names is False else self.feature_names
-        shap.summary_plot(shap_values, self.partitions.X, feature_names=feature_names, show=False,
+        shap.summary_plot(shap_values, df, feature_names=feature_names, show=False,
                           max_display=max_display, title=title, layered_violin_max_num_bins=layered_violin_max_num_bins,
                           class_names=class_names,
                           # class_inds=class_inds,
@@ -216,6 +218,39 @@ class FeatureResults:
         exp = sum(self.explanations) / len(self.explanations)
         exp.feature_names = self.feature_names
         return exp
+
+    def filter_explanation(self, filter: Callable[[pd.DataFrame], pd.DataFrame]) -> shap.Explanation:
+        exp: shap.Explanation = self.mean_shap_values.copy()
+        exp.values = self.filter_shap(filter)
+        return exp
+
+    def filter_shap(self, filter: Callable[[pd.DataFrame], pd.DataFrame]) -> np.ndarray:
+        #print("VERY UNSAFE FUNCTION!")
+        x = self.partitions.X
+        x_t = self.partitions.X_T
+        upd_samples = filter(x)
+        row_df = x[[]].copy()
+        row_df["ind"] = np.arange(len(row_df))
+        row_indexes = row_df.join(upd_samples[[]], how = "inner").ind.to_list()
+        col_df = x_t[[]]
+        col_df["ind"] = np.arange(len(col_df))
+        col_indexes = col_df.join(upd_samples.columns.to_frame()[[]].copy()).ind.to_list()
+        return self.stable_shap_values[row_indexes][:, col_indexes]
+
+    def filter_shap_by_data_samples(self, data: ExpressionDataset):
+        return self.filter_shap(lambda s: s.join(data.samples[[]], how="inner"))
+
+    def filter_shap_by_data_samples_column(self, data: ExpressionDataset, column, values: List[str]):
+        return self.filter_shap_by_data_samples_column(data.by_samples.collect(lambda s: s[column].isin(values)))
+
+    def filter_shap_by_data_tissues(self, data: ExpressionDataset, tissues: List[str]):
+        return self.filter_shap_by_data_samples_column("tissue", tissues)
+
+    def filter_shap_by_data_species(self, data: ExpressionDataset, species: List[str]):
+        return self.filter_shap_by_data_samples_column("species", species)
+
+
+
 
     def _plot_heatmap_(self,
                        shap_explanation: Union[shap.Explanation, List[shap.Explanation]],
@@ -248,8 +283,8 @@ class FeatureResults:
                            auto_size_plot=auto_size_plot, feature_display_range=feature_display_range, show=False)
         return self.make_figure(save)
 
-    def plot_decision(self, save: Path = None):
-        return self._plot_decision_(self.expected_values_mean, self.stable_shap_values, True, save)
+    def plot_decision(self, save: Path = None, feature_display_range = None):
+        return self._plot_decision_(self.expected_values_mean, self.stable_shap_values, True, save, feature_display_range=feature_display_range)
 
     def data_for_interaction_heatmap(self, stable_interaction_values, max: int = 15, round: int = 4) -> Tuple[np.ndarray, np.ndarray]:
         abs_int = np.abs(stable_interaction_values).mean(axis=0).round(round)
@@ -371,6 +406,23 @@ class FeatureSummary:
     results: List[FeatureResults]
     nan_as_zero: bool = True
 
+    def filter_explanation(self, filter: Callable[[pd.DataFrame], pd.DataFrame]) -> shap.Explanation:
+        exp: shap.Explanation = self.mean_shap_values.copy()
+        return self.first.filter_explanation(filter)
+
+    def filter_shap(self, filter: Callable[[pd.DataFrame], pd.DataFrame]) -> np.ndarray:
+        return self.first.filter_shap(filter)
+
+    def filter_shap_by_data_samples(self, data: ExpressionDataset):
+        return self.first.filter_shap_by_data_samples(data)
+
+    def filter_shap_by_data_tissues(self, data: ExpressionDataset, tissues: List[str]):
+        return self.first.filter_shap_by_data_tissues(data, tissues)
+
+    def filter_shap_by_data_species(self, data: ExpressionDataset, species: List[str]):
+        return self.first.filter_shap_by_data_species(data, species)
+
+
     @cached_property
     def explanations(self) -> List[shap.Explanation]:
         return [r.explanation_mean for r in self.results]
@@ -476,6 +528,15 @@ class FeatureSummary:
         return np.mean(np.nan_to_num(self.shap_values, 0.0), axis=0) if self.nan_as_zero else np.nanmean(self.shap_values, axis=0)
 
     @cached_property
+    def stable_shap_dataframe(self):
+        return pd.DataFrame(self.stable_shap_values, index=self.partitions.X.index, columns=self.partitions.X.columns)
+
+    @cached_property
+    def stable_shap_dataframe_named(self):
+        return pd.DataFrame(self.stable_shap_values, index=self.partitions.X.index, columns=self.feature_names)
+
+
+    @cached_property
     def interaction_values(self) -> List[np.ndarray]:
         return [f.stable_interaction_values for f in self.results]
 
@@ -551,8 +612,16 @@ class FeatureSummary:
                f"</table>"
 
 
-    def plot_heatmap(self, gene_names: bool = True, max_display: int = 30, figsize: Tuple[float, float] = (14,9), sort_by_clust: bool = True, save: Path = None):
-        return self.first._plot_heatmap_(self.explanation_mean, gene_names, max_display, figsize, sort_by_clust, save)
+    def plot_heatmap(self,
+                     gene_names: bool = True,
+                     max_display: int = 30,
+                     figsize: Tuple[float, float] = (14,9),
+                     sort_by_clust: bool = False,
+                     save: Path = None,
+                     custom_explanation: shap.Explanation = None
+                     ):
+        explanation = self.explanation_mean if custom_explanation is None else custom_explanation
+        return self.first._plot_heatmap_(explanation, gene_names, max_display, figsize, sort_by_clust, save)
 
     def plot_waterfall(self, index: Union[int, str], save: Path = None, max_display = 10, show: bool = False):
         return self.first.__plot_waterfall__(index, self.stable_shap_values, save, max_display, show)
@@ -570,19 +639,45 @@ class FeatureSummary:
                           ):
         return self.first.__plot_interactions__(self.stable_interaction_values, max, round, colorscale, width, height, title, axis_title, title_font_size, save)
 
-    def plot(self, gene_names: bool = True, save: Path = None,
-             max_display=50, title=None, plot_size = 0.5, layered_violin_max_num_bins = 20,
-             plot_type=None, color=None, axis_color="#333333", alpha=1, class_names=None):
-        return self.first._plot_(self.stable_shap_values, gene_names, save, max_display, title,
+    def plot(self,
+             gene_names: bool = True,
+             save: Path = None,
+             max_display=50,
+             title=None,
+             plot_size = 0.5,
+             layered_violin_max_num_bins = 20,
+             plot_type=None,
+             color=None,
+             axis_color="#333333",
+             alpha=1,
+             class_names=None,
+             custom_shap_values: np.ndarray = None,
+             custom_x: pd.DataFrame = None
+             ):
+        shap_values = self.stable_shap_values if custom_shap_values is None else custom_shap_values
+        return self.first._plot_(shap_values, gene_names, save, max_display, title,
                            layered_violin_max_num_bins, plot_type, color, axis_color, alpha, class_names = class_names, plot_size=plot_size)
 
 
-    def plot_interaction_decision_plot(self, title: str = None, minimum: float = 0.0, maximum: float = 0.0, feature_display_range = None, auto_size_plot: bool = True, save: Path = None):
+    def plot_interaction_decision(self, title: str = None,
+                                  minimum: float = 0.0, maximum: float = 0.0,
+                                  feature_display_range = None,
+                                  auto_size_plot: bool = True,
+                                  save: Path = None):
         return self.first._plot_decision_(self.expected_values_mean, self.stable_interaction_values, title, True, minimum= minimum, maximum= maximum,
                                       feature_display_range = feature_display_range, auto_size_plot = auto_size_plot, save = save)
 
-    def plot_decision(self, title: str = None, minimum: float = 0.0, maximum: float = 0.0, feature_display_range = None, auto_size_plot: bool = True, save: Path = None):
-        return self.first._plot_decision_(self.expected_values_mean, self.stable_shap_values, title, True, minimum= minimum, maximum= maximum,
+    def plot_decision(self,
+                      title: str = None,
+                      minimum: float = 0.0,
+                      maximum: float = 0.0,
+                      feature_display_range = None,
+                      auto_size_plot: bool = True,
+                      save: Path = None,
+                      custom_shap_values: np.ndarray = None,
+                      ):
+        shap_values = self.stable_shap_values if custom_shap_values is None else custom_shap_values
+        return self.first._plot_decision_(self.expected_values_mean, shap_values, title, True, minimum= minimum, maximum= maximum,
                                           feature_display_range = feature_display_range, auto_size_plot = auto_size_plot, save = save)
 
 

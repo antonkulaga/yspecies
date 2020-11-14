@@ -93,12 +93,22 @@ class Locations:
             self.annotations = Locations.Input.Annotations(self.dir / "annotations")
 
     class Interim:
+
+        def stage(self, num: str or int):
+            if num == "2" or num == "_2" or num == 2 or num == "two":
+                return self.stage_two
+            elif num == "3" or num == "_3" or num == 3 or num == "three":
+                return self.stage_three
+            else:
+                return self.stage_one
+
         def __init__(self, base: Path):
             self.dir = base
             self.selected = self.dir / "selected"
             self.optimization = self.dir / "optimization"
             self.stage_one = self.dir / "stage_1"
             self.stage_two = self.dir / "stage_2"
+            self.stage_three = self.dir / "stage_3"
 
 
     class Metrics:

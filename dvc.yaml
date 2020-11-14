@@ -37,8 +37,6 @@ stages:
       - data/interim/stage_1/results_concatenated.tsv
       - data/interim/stage_1/partitions
       - data/interim/stage_2/input
-      - data/output/plots/stage_1/stage_one_summary_lifespan.svg
-      - data/output/plots/stage_2/stage_two_untuned_summary_lifespan.svg
       - data/output/stage_1/gestation_days_selected.tsv
       - data/output/stage_1/mass_kg_selected.tsv
       - data/output/stage_1/mtGC_selected.tsv
@@ -50,23 +48,32 @@ stages:
       notebooks/stage_two_shap_selection.ipynb data/output/notebooks/stage_two_shap_selection.ipynb
     deps:
       - data/interim/stage_1/results_concatenated.tsv
-      - data/interim/optimization/lifespan.sqlite
+      - data/interim/optimization/lifespan_2.sqlite
       - data/interim/stage_2/input
     outs:
       - data/interim/stage_2/partitions
-      - data/output/stage_2/lifespan.tsv
       - data/output/stage_2/lifespan_with_traits.tsv
-      - data/output/plots/stage_2/stage_two_summary_lifespan.svg
-      - data/output/plots/stage_2/stage_two_decision_lifespan.svg
-      - data/output/plots/stage_2/heatmap_lifespan_stage_two.svg
-      - data/output/plots/stage_2/heatmap_lifespan_stage_two_100.svg
-      - data/output/plots/stage_2/heatmap_lifespan_stage_two_unclustered.svg
-      - data/output/plots/stage_2/heatmap_lifespan_stage_two_unclustered_100.svg
-      - data/output/plots/stage_2/heatmap_lifespan_untuned_stage_two.svg
-      - data/output/plots/stage_2/heatmap_lifespan_untuned_unclustered_stage_two.svg
+      - data/output/stage_2/lifespan.tsv
+      #- data/output/stage_2/shap_results.tsv
+      - data/output/plots/stage_2/decision_lifespan.svg
+      - data/output/plots/stage_2/heatmap_lifespan_unclustered.svg
+      - data/output/plots/stage_2/summary_lifespan.svg
+      - data/output/plots/life_history_no_genes
       - data/output/plots/interactions/
-      - data/output/plots/stage_2/
       #  - data/output/notebooks/stage_two_shap_selection.ipynb
+  stage_three:
+    cmd: papermill -f parameters/stage_three_shap_selection.yaml  --progress-bar --report-mode
+      notebooks/stage_three_shap_selection.ipynb data/output/notebooks/stage_three_shap_selection.ipynb
+    deps:
+      - data/interim/optimization/lifespan_3.sqlite
+    outs:
+      - data/output/plots/stage_3/interactions/
+      - data/output/plots/stage_3/life_history/
+      - data/output/plots/stage_3/stage_3_interactions.png
+      - data/output/plots/stage_3/stage_3_decision.svg
+      - data/output/plots/stage_3/stage_3_summary.svg
+      - data/output/plots/stage_3/stage_3_heatmap_unclustered.svg
+      #  - data/output/notebooks/stage_three_shap_selection.ipynb
   tune:
     cmd: python tune.py
     params:
@@ -99,6 +106,7 @@ stages:
       - notebooks/results_intersections.ipynb
     outs:
       - data/output/notebooks/results_intersections.ipynb
+      - data/output/results/shap_with_causal_linear.tsv
       - data/output/stage_2/shap_results.tsv
       - data/output/results/shap_with_linear.tsv
       - data/output/results/genage_intersection.tsv

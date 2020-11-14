@@ -32,13 +32,19 @@ class PipelineFactory:
         )
         return optuna.multi_objective.study.create_study(directions=['maximize', 'minimize', 'maximize'], storage=storage, study_name=study_name, load_if_exists = True)
 
-    def make_partition_shap_pipe(self, trait: str = None, study_name: str = None, study_path: Path = None):
+    def make_partition_shap_pipe(self, trait: str = None, study_name: str = None, study_path: Path = None, opt_metrics: str = "huber"):
         assert trait is not None or study_path is not None, "either trait or study path should be not None"
         study_name = f"{trait}_r2_huber_kendall" if study_name is None else study_name
         study_path = self.locations.interim.optimization / (trait+".sqlite") if study_path is None else study_path
         study = self.load_study(study_path, study_name)
         if len(study.get_pareto_front_trials())>0 :
-            metrics, params = MultiObjectiveResults.from_study(study).best_metrics_params_r2()
+            optimization_results: MultiObjectiveResults = MultiObjectiveResults.from_study(study)
+            if opt_metrics == "huber":
+                metrics, params = optimization_results.best_metrics_params_huber()
+            elif opt_metrics == "kendall_tau":
+                metrics, params = optimization_results.best_metrics_params_kendall_tau()
+            else:
+                metrics, params = optimization_results.best_metrics_params_r2()
             params["verbose"] = -1
             if "early_stopping_round" not in params:
                 params["early_stopping_round"] = 10
@@ -65,8 +71,8 @@ class PipelineFactory:
         ]
         )
 
-    def make_shap_pipeline(self, trait: str = None, study_name: str = None, study_path: Path = None):
-        partition_shap_pipe = self.make_partition_shap_pipe(trait, study_name, study_path)
+    def make_shap_pipeline(self, trait: str = None, study_name: str = None, study_path: Path = None, opt_metrics: str = "huber"):
+        partition_shap_pipe = self.make_partition_shap_pipe(trait, study_name, study_path, opt_metrics)
         return Pipeline(
             [
                 ('extractor', DataExtractor()),
@@ -75,8 +81,8 @@ class PipelineFactory:
             ]
         )
 
-    def make_repeated_shap_pipeline(self, trait: str = None, study_name: str = None, study_path: Path = None):
-        partition_shap_pipe = self.make_partition_shap_pipe(trait, study_name, study_path = study_path)
+    def make_repeated_shap_pipeline(self, trait: str = None, study_name: str = None, study_path: Path = None, opt_metrics:str = "huber"):
+        partition_shap_pipe = self.make_partition_shap_pipe(trait, study_name, study_path = study_path, opt_metrics=opt_metrics)
         repeated_cv = Repeat(partition_shap_pipe, self.repeats, lambda x,i: (x[0], replace(x[1], seed=i)))
         return Pipeline(
             [
