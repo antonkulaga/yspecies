@@ -143,12 +143,3 @@ Transformers:
 Module that contains final results
 
 * FeatureResults is a key class that contains selected features, folds as well as auxilary methods to plot and investigate results
-
-
-## KNOWN ISSUES ##
-
-There is a temporary issue with DVC resolution (https://github.com/iterative/dvc/issues/4507)[https://github.com/iterative/dvc/issues/4507] 
-If you by chance have it there is a workaround:
-```
-touch .dvc/cache/d4/1d8cd98f00b204e9800998ecf8427e
-```
