@@ -21,7 +21,7 @@ For RNA-Seq processing of samples [quantification](https://github.com/antonkulag
 
 For uploading [Compara orthology data](ftp://ftp.ensembl.org/pub/current_compara) as well as quantified data of our samples to GraphDB database [species-notebooks](https://github.com/antonkulaga/species-notebooks) repository can be used.
 
-### LightGBM+SHAP stages I, II models###
+### LightGBM+SHAP stages I, II models ###
 
 To reproduce stage I and II models current [yspecies](https://github.com/antonkulaga/yspecies) repository can be used (see documentation below)
 There are dedicated notebooks devoted to those stages:
@@ -119,10 +119,16 @@ Most of the code is packed into classes. The workflow is build on top of scikitl
 Yspecies package has the following modules:
 * dataset - ExpressionDataset class to handle cross-species samples, genes, species metadata and expressions
 * partition - classes required for sci-kit-learn pipeline starting from ExpressionDataset going to SortedStratification
+* helpers - auxiliary methods
+* preprocess - classes for preprocessing steps of the cross-species pipeline
+* config - project-specific config values (for example, folder locations)
+* tuning - classes for hyperparametric optimization
+* workflow - general classes with advanced scikit-learn workflow building blocks
+* models - cross-validation models and metrics
 * selection - LightGBM and SHAP-based feature selection
-* results - FeatureSelection results with some auxiliary methods to explore specific genes and shap values
+* explanations - FeatureSelection results, plots and auxiliary methods to explor them
 * utils - various utility functions and classes
-* workflow - helper classes required to reproduce pipelines in the paper (like enums, locations and so on)
+* workflow - helper classes required to reproduce pipelines in the paper
 
 The code in yspecies folder is a conda package that is used inside notebooks. There is also an option to use a [conda version of the package](https://anaconda.org/antonkulaga/yspecies)
 
@@ -185,8 +191,6 @@ Auxilary classes:
 Transformers:
 
 * ShapSelector - key transformer that does the learning
-
-
 
 ## results module ##
 
