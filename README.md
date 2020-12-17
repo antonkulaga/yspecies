@@ -1,8 +1,45 @@
 YSpecies
 ========
 
-This repository was created to prototype the DVC-based ML pipelines for the crosspecies project
-All dependencies are written in conda environment.yaml file, DVC and jupyter lab are also installed there.
+This repository as a double-edged sword serves two purposes:
+* Running cross-species analyses on the data collected by Cross-Species project of Systems Biology of Aging Group
+* Reproducing the analysis of "Machine learning analysis of longevity-associated gene expression landscapes in mammals" paper
+
+## Role of this repository in cross-species machine learning pipeline ##
+
+![Cross-species Machine learning pipeline](/data/images/pipeline.png?raw=true "Machine learning pipeline in the paper")
+
+On this figure we illustrate the core elements of Cross-Species ML pipeline:
+
+### RNA-quantification ###
+This step is optional for reproducing the paper as all the quantified data can be pulled by [DVC](https://dvc.org) in the current [yspecies](https://github.com/antonkulaga/yspecies) repository.
+
+For building the indexes of reference genome and transcriptomes [species-notebooks](https://github.com/antonkulaga/species-notebooks) repository can be used.
+
+For RNA-Seq processing of samples [quantification](https://github.com/antonkulaga/rna-seq/tree/master/pipelines/quantification) pipeline can be used.
+
+### LightGBM+SHAP stages I, II models###
+
+To reproduce stage I and II models current [yspecies](https://github.com/antonkulaga/yspecies) repository can be used (see documentation below)
+There are dedicated notebooks devoted to those stages:
+* **stage_one_shap_selection notebook** contains stage one shap_selection code
+* **stage_two_shap_selection notebook** contains stage two shap_selection code
+
+### Other models ###
+
+Linear models are implemented in [cross-species-linear-models](https://github.com/ursueugen/cross-species-linear-models) repository
+Bayesian networks analysis and multilevel Bayesian linear modelling are available at: [bayesian_networks_and_bayesian_linear_modeling](https://github.com/rodguinea/bayesian_networks_and_bayesian_linear_modeling) repository
+
+In the same time, results of both of these models can be pulled by [DVC](https://dvc.org) in the current [yspecies](https://github.com/antonkulaga/yspecies) repository
+
+### Ranked results ###
+
+To generate a ranked table current [yspecies](https://github.com/antonkulaga/yspecies) repository can be used (see documentation below)
+There is a dedicated **results_intersections notebook** devoted to generating ranked tables.
+
+### LightGBM+SHAP stage III ###
+
+To reproduce this stage you can use **stage_three_shap_selection notebook** notebook in the notebooks folders
 
 Project structure
 -----------------
@@ -11,29 +48,35 @@ In the _data_ folder one keeps _input_, _interim_ and _output_ data.
 
 Before you start running anything do not forget to dvc pull the data and after commiting do not forget to dvc push it!
 
-The pipeline is run by running dvc stages (see stages folder)
+The pipeline is run by running dvc stages (see dvc.yaml file)
 
 Most of the analysis is written in jupyter notebooks in the notebooks folder.
+
 Each stage runs (and source controls input-outputs) corresponding notebooks using papermill software (which also stores output of the notebooks to data/notebooks)
 
-Temporaly some classes are copy-pasted from xspecies repository to make notebooks works
 
-
-Project environment
+Getting started
 -------------------
+First you have to create a [Conda environment](https://docs.conda.io/en/latest/miniconda.html) for the project:
+
 To create environment you can do:
 ```bash
 conda env create --file environment.yaml
+conda activate yspecies
 ```
+If any errors occur when setting up please, read known issues on the bottom of README.md If the problem is not mentioned there - feel free to open a github issue.
 
-yspecies package
-----------------
-
-The code in yspecies folder is a conda package that is used inside notebooks.
-The package is included in environment.yaml but you can also install it separately from conda https://anaconda.org/antonkulaga/yspecies
-```bash
-conda install -c antonkulaga yspecies
+Then you have to pull the data with DVC, for this you should activate yspecies environment, and then:
 ```
+dvc pull
+```
+NOTE: we keep the data at GoogleDrive, so on first run dvc pull may ask you to authentificate with Google Drive
+
+after authentication you can run any of the pipelines with 
+```
+dvc repro
+```
+or can run jupyter notebooks to explore notebooks on your own (see running notebooks section)
 
 Running stages
 --------------
@@ -47,24 +90,25 @@ Most of the stages also produce notebooks together with files in the output
 
 There are several key notebooks in the projects. All notebooks can be run either from jupyter (by jupyter lab notebooks) or command-line by dvc repro.
 * **select_samples notebook** does preprocessing to select right combination of samples, genes and species. Most of other notebooks depend on it
-* **shap_selection notebook** contains shap_selection code that was rewriteen from initial **2_gbm_explanations** file written by Vlada
-* **results_intersections notebook** is used to compute intersection tables taken from several analysis methods (linear and shap)
-* **explainable_boosting notebook** is just an experimental notebook to play with Explainable Gradient boosting
-* **prepare proteins notebook** is used to prepare some protein sequences for Eliza's protein sequence analysis. It is not complited as there is also Polynote code that does part of this job
-
+* **stage_one_shap_selection notebook** contains stage one shap_selection code
+* **stage_two_shap_selection notebook** contains stage two shap_selection code
+* **stage_three_shap_selection notebook** contains stage three shap_selection code
+* **results_intersections notebook** is used to compute intersection tables taken from several analysis methods (linear,causal and shap)
+* For each of the stages there are also **stage_<number>_optimize** notebooks which contain hyper-parameter optimization code
 ## Running notebooks manually ##
 
-You can run notebooks manually by:
+You can run notebooks manually by activating yspecies environment and running:
 ```bash
 jupyter lab notebooks
 ```
-And then running the notebook of our choice. 
+and then running the notebook of our choice. 
 However, keep in mind that notebooks depend on each other.
 In particular, select_samples notebook generates the data for all others.
 
+
 # Core SHAP selection logic #
 
-Most of the code is packed into classes. The workflow is build on top of scikitlean Pipelines.
+Most of the code is packed into classes. The workflow is build on top of scikitlean Pipelines. For the in-depth description of the pipeline read Cross-Species paper.
 
 # Yspecies package #
 
@@ -72,9 +116,11 @@ Yspecies package has the following modules:
 * dataset - ExpressionDataset class to handle cross-species samples, genes, species metadata and expressions
 * partition - classes required for sci-kit-learn pipeline starting from ExpressionDataset going to SortedStratification
 * selection - LightGBM and SHAP-based feature selection
-* results - FeatureSelection results with some auxilary methods to explore specific genes and shap values
-* utils - varios utility functions and classes
+* results - FeatureSelection results with some auxiliary methods to explore specific genes and shap values
+* utils - various utility functions and classes
 * workflow - helper classes required to reproduce pipelines in the paper (like enums, locations and so on)
+
+The code in yspecies folder is a conda package that is used inside notebooks. There is also an option to use a [conda version of the package](https://anaconda.org/antonkulaga/yspecies)
 
 ## ExpressionDataset ##
 
@@ -143,3 +189,19 @@ Transformers:
 Module that contains final results
 
 * FeatureResults is a key class that contains selected features, folds as well as auxilary methods to plot and investigate results
+
+# KNOWN ISSUES #
+
+Here we list workarounds for some typical problems connected with running the repository:
+
+1) error trying to exec 'cc1plus': exe: No such file or directory
+
+Such error emerges when g++ is not installed and pip version of shap package is used (they publish conda version with delay so we currently have them as pip dependency)
+The workaround is simple:
+```
+sudo apt install g++
+```
+
+2) Windows and MAC-specific errors.
+
+Even though yspecies seems to work on MAC and windows, we used Linux as our main operating system and did not test it throughtly on Windows and Mac, so feel free to report any issues with them.
