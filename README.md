@@ -1,22 +1,22 @@
 YSpecies
 ========
 
-This repository as a double-edged sword serves two purposes:
-* Running cross-species analyses on the data collected by Cross-Species project of Systems Biology of Aging Group
+This repository like a double-edged sword serves two purposes:
+* Running cross-species analyses on the data collected by the Cross-Species project of the [Systems Biology of Aging Group](http://aging-research.group)
 * Reproducing the analysis of "Machine learning analysis of longevity-associated gene expression landscapes in mammals" paper
 
 ## Role of this repository in cross-species machine learning pipeline ##
 
 ![Cross-species Machine learning pipeline](/data/images/pipeline.png?raw=true "Machine learning pipeline in the paper")
 
-On this figure we illustrate the core elements of Cross-Species ML pipeline:
+On this figure we illustrate the core elements of the Cross-Species ML pipeline:
 
 ### RNA-quantification ###
-This step is optional for reproducing the paper as all the quantified data can be pulled by [DVC](https://dvc.org) in the current [yspecies](https://github.com/antonkulaga/yspecies) repository.
-
-For building the indexes of reference genome and transcriptomes [species-notebooks](https://github.com/antonkulaga/species-notebooks) repository can be used.
+For downloading and preparing the indexes of reference genomes and transcriptomes [species-notebooks](https://github.com/antonkulaga/species-notebooks) repository can be used.
 
 For RNA-Seq processing of samples [quantification](https://github.com/antonkulaga/rna-seq/tree/master/pipelines/quantification) pipeline can be used.
+
+For uploading [Compara orthology data](ftp://ftp.ensembl.org/pub/current_compara) as well as quantified data of our samples to GraphDB database [species-notebooks](https://github.com/antonkulaga/species-notebooks) repository can be used.
 
 ### LightGBM+SHAP stages I, II models###
 
@@ -188,7 +188,7 @@ Transformers:
 
 Module that contains final results
 
-* FeatureResults is a key class that contains selected features, folds as well as auxilary methods to plot and investigate results
+* FeatureResults is a key class that contains selected features, folds as well as auxiliary methods to plot and investigate results
 
 # KNOWN ISSUES #
 
@@ -196,7 +196,7 @@ Here we list workarounds for some typical problems connected with running the re
 
 1) error trying to exec 'cc1plus': exe: No such file or directory
 
-Such error emerges when g++ is not installed and pip version of shap package is used (they publish conda version with delay so we currently have them as pip dependency)
+Such error emerges when g++ is not installed and pip version of shap package is used (they publish conda version with delay, so we currently have it as pip dependency)
 The workaround is simple:
 ```
 sudo apt install g++
@@ -204,4 +204,4 @@ sudo apt install g++
 
 2) Windows and MAC-specific errors.
 
-Even though yspecies seems to work on MAC and windows, we used Linux as our main operating system and did not test it throughtly on Windows and Mac, so feel free to report any issues with them.
+Even though yspecies seems to work on MAC and windows, we used Linux as our main operating system and did not test it thoroughly on Windows and Mac, so feel free to report any issues with them.
