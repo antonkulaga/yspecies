@@ -5,6 +5,9 @@ This repository like a double-edged sword serves two purposes:
 * Running cross-species analyses on the data collected by the Cross-Species project of the [Systems Biology of Aging Group](http://aging-research.group)
 * Reproducing the analysis of "Machine learning analysis of longevity-associated gene expression landscapes in mammals" paper
 
+> If you are using the code or data from this project, please do not forget to reference our paper. 
+> If you have any questions regarding the data, the code, or the paper, feel free to contact [Systems Biology of Aging Group](http://aging-research.group) or open an issue on github.
+
 ## Role of this repository in cross-species machine learning pipeline ##
 
 ![Cross-species Machine learning pipeline](/data/images/pipeline.png?raw=true "Machine learning pipeline in the paper")
@@ -70,9 +73,10 @@ Then you have to pull the data with DVC, for this you should activate yspecies e
 ```
 dvc pull
 ```
-NOTE: we keep the data at GoogleDrive, so on first run dvc pull may ask you to authentificate with Google Drive
+NOTE: we keep the data at GoogleDrive, so on the first run of `dvc pull` it may give you a link to allow access to your GoogleDrive to download the project data, like this:
+![DVC confirm_permissions](/data/images/dvc_gdrive.png?raw=true "Give Google Drive Permissions") We are grateful for @shcheklein and @dmpetrov for their help with DVC configuration.
 
-after authentication you can run any of the pipelines with 
+After authentication, you can run any of the pipelines with:
 ```
 dvc repro
 ```
@@ -202,6 +206,8 @@ The workaround is simple:
 sudo apt install g++
 ```
 
-2) Windows and MAC-specific errors.
+2) Failures to download the files: if one or more files were not downloaded, re-run dvc pull again!
+
+3) Windows and MAC-specific errors.
 
 Even though yspecies seems to work on MAC and windows, we used Linux as our main operating system and did not test it thoroughly on Windows and Mac, so feel free to report any issues with them.

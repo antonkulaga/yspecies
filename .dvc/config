@@ -1,6 +1,6 @@
 [core]
-    remote = species
+    remote = public
 ['remote "species"']
-    url = gdrive://0APuU2w04mc7qUk9PVA/repositories/species
+    url = gdrive://0APuU2w04mc7qUk9PVA/repositgiories/species
 ['remote "public"']
     url = gdrive://1fwpl8eUsyfZUmeO_sRg0u-nmvXxX7kiS
