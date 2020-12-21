@@ -21,9 +21,6 @@ dependencies:
   - click>=7.1.2
   - loguru>=0.5.0
   - plotly>=4.14.1
-  - pip
-  - pip:
-      - interpret>=0.2.2 #for experimental notebooks with explained boosting machines
-      - shap>=>0.37.0
+  - shap>=0.37.0
 prefix: /data/miniconda3/envs/species
 

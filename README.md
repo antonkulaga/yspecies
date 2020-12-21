@@ -204,7 +204,7 @@ Here we list workarounds for some typical problems connected with running the re
 
 1) error trying to exec 'cc1plus': exe: No such file or directory
 
-Such error emerges when g++ is not installed and pip version of shap package is used (they publish conda version with delay, so we currently have it as pip dependency)
+Such error emerges when g++ is not installed:
 The workaround is simple:
 ```
 sudo apt install g++
