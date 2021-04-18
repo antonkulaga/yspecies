@@ -6,21 +6,19 @@ channels:
   - defaults
 dependencies:
   - python=3.8
-  - jupyterlab>=2.2.8
-  - dvc>=1.11.6
-  - papermill>=2.2.2
-  - anaconda-client>=1.7.2
-  - conda-build>=3.20.2
-  - mamba>=0.7.5
-  - scikit-learn>=0.23.2
-  - seaborn>=0.10.1
-  - more-itertools>=8.4.0
-  - lightgbm>=3.1.1
-  - statsmodels>=0.11.1
-  - optuna>=2.3.0
-  - click>=7.1.2
-  - loguru>=0.5.0
-  - plotly>=4.14.1
-  - shap>=0.37.0
-prefix: /data/miniconda3/envs/species
-
+  - jupyterlab=3.0.14
+  - dvc=2.0.18
+  - papermill=2.3.3
+  - anaconda-client=1.7.2
+  - conda-build=3.21.4
+  - mamba=0.10.0
+  - scikit-learn=0.24.1
+  - seaborn=0.11.1
+  - more-itertools=8.7.0
+  - lightgbm=3.2.0
+  - statsmodels=0.12.2
+  - click=7.1.2
+  - loguru=0.5.3
+  - plotly=4.14.3
+  - shap=0.37.0
+  - optuna=2.7.0

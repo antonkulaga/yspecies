@@ -60,12 +60,13 @@ Each stage runs (and source controls input-outputs) corresponding notebooks usin
 
 Getting started
 -------------------
-First you have to create a [Conda environment](https://docs.conda.io/en/latest/miniconda.html) for the project:
+First you have to create a [Conda environment](https://docs.conda.io/en/latest/miniconda.html) or [Micromamba environment](https://github.com/mamba-org/mamba) for the project:
+Micromamba is a superior alternative to Conda with very similar API.
 
 To create environment you can do:
 ```bash
-conda env create --file environment.yaml
-conda activate yspecies
+micromamba create --file environment.yaml
+micromamba activate yspecies
 ```
 If any errors occur when setting up please, read known issues on the bottom of README.md If the problem is not mentioned there - feel free to open a github issue.
 
