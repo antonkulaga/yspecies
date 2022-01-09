@@ -60,12 +60,13 @@ Each stage runs (and source controls input-outputs) corresponding notebooks usin
 
 Getting started
 -------------------
+
+You can either use micromamba/conda/anaconda or docker container to setup the project.
+
+### Micromamba/Conda setup
+
 First you have to create a [Conda environment](https://docs.conda.io/en/latest/miniconda.html) or [Micromamba environment](https://github.com/mamba-org/mamba) for the project:
 Micromamba is a superior alternative to Conda with very similar API.
-Alternatively, you can use docker container that already contains micromamba environment with everything pre-installed:
-```
-docker run -i -t quay.io/comp-bio-aging/yspecies:latest
-```
 
 To create environment you can do:
 ```bash
@@ -86,6 +87,24 @@ After authentication, you can run any of the pipelines with:
 dvc repro
 ```
 or can run jupyter notebooks to explore notebooks on your own (see running notebooks section)
+
+### Docker setup
+
+Alternatively, you can use docker container that already contains micromamba environment with everything pre-installed.
+Get inside the container with:
+```
+docker run -i -t --network host quay.io/comp-bio-aging/yspecies:latest
+```
+Micromamba environment will be automatically activated inside the container.
+To reproduce the pipelines you can run:
+```
+dvc repro
+```
+You can also pull the data and start jupyterlab to work with notebooks
+```bash
+dvc pull
+jupyter lab notebooks --allow-root
+```
 
 Running stages
 --------------
