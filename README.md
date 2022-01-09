@@ -62,6 +62,10 @@ Getting started
 -------------------
 First you have to create a [Conda environment](https://docs.conda.io/en/latest/miniconda.html) or [Micromamba environment](https://github.com/mamba-org/mamba) for the project:
 Micromamba is a superior alternative to Conda with very similar API.
+Alternatively, you can use docker container that already contains micromamba environment with everything pre-installed:
+```
+docker run -i -t quay.io/comp-bio-aging/yspecies:latest
+```
 
 To create environment you can do:
 ```bash

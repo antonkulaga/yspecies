@@ -5,20 +5,21 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - python=3.8
-  - jupyterlab=3.0.14
-  - dvc=2.0.18
+  - python=3.9
+  - jupyterlab=3.2.3
+  - dvc=2.8.3
+  - dvc-gdrive=2.8.3
   - papermill=2.3.3
-  - anaconda-client=1.7.2
-  - conda-build=3.21.4
-  - mamba=0.10.0
-  - scikit-learn=0.24.1
-  - seaborn=0.11.1
-  - more-itertools=8.7.0
-  - lightgbm=3.2.0
-  - statsmodels=0.12.2
-  - click=7.1.2
+  - scikit-learn=1.0.1
+  - anaconda-client=1.9.0
+  - conda-build=3.21.6
+  - mamba=0.17.0
+  - scikit-learn=1.0.1
+  - more-itertools=8.11.0
+  - lightgbm=3.2.1
+  - statsmodels=0.13.1
+  - click=8.0.3
   - loguru=0.5.3
-  - plotly=4.14.3
-  - shap=0.37.0
-  - optuna=2.7.0
+  - plotly=5.3.1
+  - shap=0.40.0
+  - optuna=2.10.0
