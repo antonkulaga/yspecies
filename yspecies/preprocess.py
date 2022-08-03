@@ -55,8 +55,6 @@ class FeatureSelection:
                f"</table>"
 
 
-
-
 class EncodedFeatures:
 
     def __init__(self, features: FeatureSelection, samples: pd.DataFrame, genes_meta: pd.DataFrame = None):

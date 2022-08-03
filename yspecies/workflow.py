@@ -60,6 +60,7 @@ class Collect(TransformerMixin):
     def transform(self, data: Iterable) -> Any:
         return self.fold([d for d in data if self.filter(d)])
 
+
 @dataclass(frozen=True)
 class Repeat(TransformerMixin):
     transformer: Union[TransformerMixin, Pipeline]
@@ -85,7 +86,6 @@ class TupleWith(TransformerMixin):
     parameters: Union[Union[TransformerMixin, Pipeline], Any]
     map_left: Callable[[Any], Any] = field(default_factory=lambda: lambda x: x)
     map_right: Callable[[Any], Any] = field(default_factory=lambda: lambda x: x)
-
 
     def fit(self, X, y = None):
         return self

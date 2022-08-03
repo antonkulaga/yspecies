@@ -15,11 +15,11 @@ class BasicMetrics:
     huber: float
 
     @staticmethod
-    def from_dict(dict: Dict):
-        return BasicMetrics(dict["l1"], dict["l2"], dict["huber"])
+    def from_dict(dic: Dict[str, float]):
+        return BasicMetrics(dic["l1"], dic["l2"], dic["huber"])
 
     @staticmethod
-    def from_dict(dict: Dict, row: int):
+    def from_dict(dict: Dict[Dict], row: int):
         return BasicMetrics(dict["l1"][row], dict["l2"][row], dict["huber"][row])
 
     @staticmethod
@@ -91,7 +91,6 @@ class ResultsCV:
             result = value if result is None or value < result else result
         return result
 
-
     @cached_property
     def keys(self):
         return list(self.evaluation.keys())
@@ -104,10 +103,8 @@ class ResultsCV:
     def latest(self):
         return {k: (np.array(self.evaluation[k])[-1]) for k in self.keys}
 
-
     def min(self, metrics: str) -> float:
         return self.mins[metrics] if metrics in self.mins else self.mins[metrics+"-mean"]
-
 
     def last(self, metrics: str) -> float:
         return self.latest[metrics] if metrics in self.latest else self.latest[metrics+"-mean"]

@@ -137,6 +137,7 @@ class Fold:
                f"<tr><td>{self.metrics}</td><td>str({self.validation_species})</td><td>{str(self.shap_dataframe.shape)}</td><td>{str(self.shap_absolute_sum_non_zero.shape)}</td><td>{self.eval_metrics}</td></tr>" \
                f"</table>"
 
+
 @dataclass
 class CrossValidator(TransformerMixin):
     early_stopping_rounds: int = 10
@@ -166,7 +167,7 @@ class CrossValidator(TransformerMixin):
         return self
 
     def regression_model(self, X_train, X_test, y_train, y_test, parameters: Dict, categorical=None,
-                         num_boost_round: int = 250, seed: int = None) -> Booster:
+                         num_boost_round: int = 250, seed: int = None) -> [Booster, list[BasicMetrics]]:
         '''
         trains a regression model
         :param X_train:
@@ -188,7 +189,7 @@ class CrossValidator(TransformerMixin):
         gbm = lgb.train(parameters,
                         lgb_train,
                         num_boost_round=num_boost_round,
-                        valid_sets=lgb_eval,
+                        valid_sets=[lgb_eval],
                         evals_result=evals_result,
                         verbose_eval=num_boost_round,
                         callbacks=[stopping_callback]

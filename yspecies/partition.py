@@ -181,6 +181,7 @@ class DataPartitioner(TransformerMixin):
 
     def transform(self, for_partition: Tuple[EncodedFeatures, PartitionParameters]) -> ExpressionPartitions:
         '''
+        :param for_partition:
         :param data: ExpressionDataset
         :param k: number of k-folds in sorted stratification
         :return: partitions

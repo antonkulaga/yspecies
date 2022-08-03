@@ -14,6 +14,7 @@ from functools import cached_property
 import pandas as pd
 from dataclasses import dataclass
 
+
 class ExpressionDataset:
     '''
     ExpressionDataset class to handle: samples, species, genes and expressions
@@ -136,7 +137,6 @@ class ExpressionDataset:
             return self.genes_meta[[label]]
         else:
             assert label in self.genes.columns.to_list(), f"cannot find label {label} anywhere!"
-
 
     def extended_samples(self, samples_columns: List[str] = None, species_columns: List[str] = None):
         '''
@@ -280,6 +280,7 @@ class ExpressionDataset:
     def min_max_trait(self, trait: str) -> List:
         return [self.species[trait].idxmin(), self.species[trait].idxmax()]
 
+
 @dataclass(frozen=True)
 class SpeciesIndexes:
     """
@@ -321,7 +322,6 @@ class SpeciesIndexes:
         return ExpressionDataset(self.dataset.name, upd_expressions, upd_samples, upd_species,  upd_genes, upd_genes_meta)
 
 
-
 @dataclass(frozen=True)
 class SamplesIndexes:
 
@@ -345,7 +345,6 @@ class SamplesIndexes:
         #upd_expressions = upd_expressions.reindex(upd_samples.index)
         return ExpressionDataset(self.dataset.name, upd_expressions, upd_samples, upd_species,  upd_genes, upd_genes_meta)
 
-
     def filter(self, filter_fun: Callable[[pd.DataFrame], pd.DataFrame]) -> ExpressionDataset:
         '''
         Function to filter DataSet samples (and filter related data in expressionda dataframe) according to the lambda provided
@@ -353,7 +352,6 @@ class SamplesIndexes:
         :return:
         '''
         return self.collect(lambda df: self.dataset.samples[filter_fun(df)])
-
 
     def __getitem__(self, item) -> ExpressionDataset:
         '''
@@ -377,6 +375,7 @@ class SamplesIndexes:
                f"<tr><th>Samples</th>" \
                f"<tr><td>{str(self.dataset.samples.shape[0])}</td></tr>" \
                f"</table>"
+
 
 @dataclass(frozen=True)
 class GenesIndexes:
